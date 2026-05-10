@@ -287,7 +287,11 @@ importers:
 
   backend: {}
 
-  frontend: {}
+  frontend:
+    devDependencies:
+      baseline-browser-mapping:
+        specifier: ^2.10.29
+        version: 2.10.29
 
 packages:
 
@@ -2431,6 +2435,11 @@ packages:
 
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
+
+  baseline-browser-mapping@2.10.29:
+    resolution: {integrity: sha512-Asa2krT+XTPZINCS+2QcyS8WTkObE77RwkydwF7h6DmnKqbvlalz93m/dnphUyCa6SWSP51VgtEUf2FN+gelFQ==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
 
   baseline-browser-mapping@2.8.12:
     resolution: {integrity: sha512-vAPMQdnyKCBtkmQA6FMCBvU9qFIppS3nzyXnEM+Lo2IAhG4Mpjv9cCxMudhgV3YdNNJv6TNqXy97dfRVL2LmaQ==}
@@ -6917,6 +6926,8 @@ snapshots:
       - debug
 
   bail@2.0.2: {}
+
+  baseline-browser-mapping@2.10.29: {}
 
   baseline-browser-mapping@2.8.12: {}
 
