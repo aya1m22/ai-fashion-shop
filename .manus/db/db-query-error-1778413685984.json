@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE products SET colorStock = JSON_SET(colorStock, '$.Black', 0) WHERE id = 1001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user VfVXGL2LgvEtAsZ.root --database 3F6TPGMJthxFz37SrfMAfa --execute UPDATE products SET colorStock = JSON_SET(colorStock, '$.Black', 0) WHERE id = 1001;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'colorStock' in 'field list'"
+  ]
+}

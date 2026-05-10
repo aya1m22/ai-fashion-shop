@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, name, gender, subcategory FROM products LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user VfVXGL2LgvEtAsZ.root --database 3F6TPGMJthxFz37SrfMAfa --execute SELECT id, name, gender, subcategory FROM products LIMIT 10;",
+  "rows": [
+    {
+      "id": "1001",
+      "name": "Satin Evening Dress",
+      "gender": "women",
+      "subcategory": "dresses"
+    },
+    {
+      "id": "1002",
+      "name": "Minimal Chic Wrap Dress",
+      "gender": "women",
+      "subcategory": "dresses"
+    },
+    {
+      "id": "1003",
+      "name": "Floral Midi Dress",
+      "gender": "women",
+      "subcategory": "dresses"
+    },
+    {
+      "id": "1004",
+      "name": "Bodycon Cocktail Dress",
+      "gender": "women",
+      "subcategory": "dresses"
+    },
+    {
+      "id": "1005",
+      "name": "Boho Maxi Dress",
+      "gender": "women",
+      "subcategory": "dresses"
+    },
+    {
+      "id": "1006",
+      "name": "Classic Button Blouse",
+      "gender": "women",
+      "subcategory": "shirts"
+    },
+    {
+      "id": "1007",
+      "name": "Striped Ruffle Top",
+      "gender": "women",
+      "subcategory": "shirts"
+    },
+    {
+      "id": "1008",
+      "name": "Linen Relaxed Shirt",
+      "gender": "women",
+      "subcategory": "shirts"
+    },
+    {
+      "id": "1009",
+      "name": "Satin Cami Top",
+      "gender": "women",
+      "subcategory": "shirts"
+    },
+    {
+      "id": "1010",
+      "name": "High-Waist Tailored Trousers",
+      "gender": "women",
+      "subcategory": "pants"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgender\tsubcategory\n1001\tSatin Evening Dress\twomen\tdresses\n1002\tMinimal Chic Wrap Dress\twomen\tdresses\n1003\tFloral Midi Dress\twomen\tdresses\n1004\tBodycon Cocktail Dress\twomen\tdresses\n1005\tBoho Maxi Dress\twomen\tdresses\n1006\tClassic Button Blouse\twomen\tshirts\n1007\tStriped Ruffle Top\twomen\tshirts\n1008\tLinen Relaxed Shirt\twomen\tshirts\n1009\tSatin Cami Top\twomen\tshirts\n1010\tHigh-Waist Tailored Trousers\twomen\tpants\n",
+  "stderr": "",
+  "execution_time_ms": 705
+}
