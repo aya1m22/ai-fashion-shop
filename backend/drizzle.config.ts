@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit";
+import path from "node:path";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -6,8 +7,8 @@ if (!connectionString) {
 }
 
 export default defineConfig({
-  schema: "../drizzle/schema.ts",
-  out: "../drizzle",
+  schema: "./drizzle/schema.ts",
+  out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
     url: connectionString,
