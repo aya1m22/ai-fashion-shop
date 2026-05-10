@@ -1,3 +1,4 @@
+import "dotenv/config";
 /**
  * Database Seed Script
  * Run with: npm run db:seed
@@ -5,7 +6,7 @@
  * This script populates the database with the initial product catalog.
  * It clears existing products and inserts fresh data from catalog.ts.
  */
-import { db } from "./db";
+import { getDb } from "./db";
 import { products } from "../drizzle/schema";
 import { initialCatalog } from "./catalog";
 import { eq } from "drizzle-orm";
@@ -13,6 +14,12 @@ import { users } from "../drizzle/schema";
 
 async function seed() {
   console.log("🌱 Starting database seed...");
+
+  const db = await getDb();
+  if (!db) {
+    console.error("❌ Could not connect to database. Make sure DATABASE_URL is set.");
+    process.exit(1);
+  }
 
   try {
     // Clear existing products
