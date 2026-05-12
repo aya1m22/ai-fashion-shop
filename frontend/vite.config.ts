@@ -150,21 +150,25 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
+import { fileURLToPath } from "node:url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
   plugins,
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
-      "@shared": path.resolve(import.meta.dirname, "..", "shared"),
-      "@assets": path.resolve(import.meta.dirname, "..", "attached_assets"),
-      "react": path.resolve(import.meta.dirname, "..", "node_modules", "react"),
-      "react-dom": path.resolve(import.meta.dirname, "..", "node_modules", "react-dom"),
+      "@": path.resolve(__dirname, "src"),
+      "@shared": path.resolve(__dirname, "..", "shared"),
+      "@assets": path.resolve(__dirname, "..", "attached_assets"),
+      "react": path.resolve(__dirname, "..", "node_modules", "react"),
+      "react-dom": path.resolve(__dirname, "..", "node_modules", "react-dom"),
     },
   },
-  envDir: path.resolve(import.meta.dirname, ".."),
-  root: path.resolve(import.meta.dirname),
+  envDir: path.resolve(__dirname, ".."),
+  root: __dirname,
   publicDir: path.resolve(import.meta.dirname, "public"),
   build: {
     outDir: path.resolve(import.meta.dirname, "..", "dist", "public"),
