@@ -22,7 +22,7 @@ const Home: React.FC = () => {
     document.title = "StyleAI — Luxury AI-Curated Fashion";
   }, []);
 
-  const { data: rawTrending, isError: trendingError } = trpc.products.list.useQuery({ limit: 4 });
+  const { data: rawTrending, isLoading: trendingLoading, isError: trendingError } = trpc.products.list.useQuery({ limit: 4 });
   const trendingProducts = React.useMemo(
     () => trendingError ? STATIC_TRENDING : (rawTrending ?? []).map(catalogToProduct).slice(0, 4),
     [rawTrending, trendingError],
