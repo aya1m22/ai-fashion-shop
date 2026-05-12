@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "vite --port 3000",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.10.29"
+    "baseline-browser-mapping": "^2.10.29",
+    "gh-pages": "^6.3.0"
   }
 }
