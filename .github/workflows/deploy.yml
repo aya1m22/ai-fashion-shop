@@ -33,8 +33,11 @@ jobs:
       - name: Build frontend
         run: pnpm run build:frontend
         env:
-          # Set this in GitHub repo Settings → Secrets → Actions
+          # Set these in GitHub repo Settings → Secrets → Actions
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          # URL of the deployed backend (e.g. https://styleai-backend.onrender.com)
+          # Without this, only static features work on GitHub Pages
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
