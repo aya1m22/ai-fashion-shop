@@ -56,6 +56,13 @@ export default function AIStylist() {
       Return ONLY a JSON array of IDs.`;
 
       const response = await askGemini(prompt);
+      
+      if (typeof response === "string" && response.includes("API key missing")) {
+        toast.error(response);
+        setIsChatLoading(false);
+        return;
+      }
+
       const ids = parseGeminiJson(response);
       const products = mockProducts.filter(p => ids.includes(p.id));
       

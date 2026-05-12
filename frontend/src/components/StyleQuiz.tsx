@@ -79,6 +79,14 @@ export default function StyleQuiz({ isOpen, onClose }: StyleQuizProps) {
       best 6 matching products. Return a JSON array of IDs only.`;
       
       const response = await askGemini(prompt);
+      
+      // Handle the case where askGemini returns the "API key missing" string
+      if (typeof response === "string" && response.includes("API key missing")) {
+        setError(response);
+        setIsLoading(false);
+        return;
+      }
+
       const ids = parseGeminiJson(response);
       
       const matchedProducts = mockProducts.filter(p => ids.includes(p.id));

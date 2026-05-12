@@ -41,6 +41,13 @@ export default function Wardrobe() {
       const prompt = `Give me exactly one short, professional styling advice sentence for this combination of items: ${names}. Maximum 15 words. Sound like a high-end fashion editor.`;
       
       const feedback = await askGemini(prompt);
+      
+      if (typeof feedback === "string" && feedback.includes("API key missing")) {
+        setAiFeedback(prev => ({ ...prev, [lookId]: "Fabulous combination! These pieces create a truly elevated silhouette. 💫" }));
+        setLoadingFeedback(prev => ({ ...prev, [lookId]: false }));
+        return;
+      }
+
       setAiFeedback(prev => ({ ...prev, [lookId]: feedback }));
     } catch (e) {
       setAiFeedback(prev => ({ ...prev, [lookId]: "Fabulous combination! These pieces create a truly elevated silhouette. 💫" }));

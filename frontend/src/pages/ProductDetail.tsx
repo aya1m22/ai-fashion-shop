@@ -68,9 +68,6 @@ export default function ProductDetail() {
           <Link href={product.gender === 'women' ? '/women' : '/men'} className="inline-flex items-center gap-2 text-[#666] hover:text-[#C9A84C] transition-colors uppercase tracking-[0.2em] text-[10px] font-bold">
             <ArrowLeft className="w-4 h-4" /> Back to {product.gender === 'women' ? "Women's" : "Men's"} Collection
           </Link>
-          <div className="flex gap-4">
-             <SizeRecommender product={product} onSelectSize={(size) => setSelectedSize(size)} />
-          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-16 mb-24">
@@ -112,8 +109,11 @@ export default function ProductDetail() {
             <div className="space-y-10 border-t border-[#2A2A2A] pt-10">
               {/* Size Selection */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <h4 className="text-[10px] uppercase tracking-[0.3em] font-bold">Select Size</h4>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-4">
+                    <h4 className="text-[10px] uppercase tracking-[0.3em] font-bold">Select Size</h4>
+                    <SizeRecommender product={product} onSelectSize={(size) => setSelectedSize(size)} />
+                  </div>
                   <button className="text-[9px] uppercase tracking-widest text-[#666] hover:text-[#C9A84C] underline font-bold">Size Guide</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
