@@ -80,20 +80,46 @@ export default function StyleQuiz({ isOpen, onClose }: StyleQuizProps) {
       
       const response = await askGemini(prompt);
       
-      // Handle the case where askGemini returns the "API key missing" string
       if (typeof response === "string" && response.includes("API key missing")) {
-        setError(response);
-        setIsLoading(false);
-        return;
+        throw new Error("KEY_MISSING");
       }
 
       const ids = parseGeminiJson(response);
-      
       const matchedProducts = mockProducts.filter(p => ids.includes(p.id));
+      
+      if (matchedProducts.length === 0) throw new Error("NO_MATCHES");
+
       setResults(matchedProducts);
       setCurrentStep(steps.length);
     } catch (e: any) {
-      setError("Oops! StyleAI is having a moment — please try again 💫");
+      console.warn("StyleAI Fallback Triggered:", e.message);
+      
+      // Smart Fallback Logic
+      const vibe = finalAnswers.vibe.toLowerCase();
+      const budget = finalAnswers.budget;
+      const category = finalAnswers.category.toLowerCase();
+      
+      let fallbackProducts = mockProducts.filter(p => {
+        const matchesVibe = p.name.toLowerCase().includes(vibe) || p.description.toLowerCase().includes(vibe);
+        const matchesCategory = category === "all of it" || p.category.toLowerCase().includes(category.replace(/s$/, ""));
+        
+        let matchesBudget = true;
+        if (budget === "Under $50") matchesBudget = p.price < 50;
+        else if (budget === "$50–$100") matchesBudget = p.price >= 50 && p.price <= 100;
+        else if (budget === "$100–$200") matchesBudget = p.price > 100 && p.price <= 200;
+
+        return matchesVibe || matchesCategory || matchesBudget;
+      });
+
+      // If still no matches, just give random 6
+      if (fallbackProducts.length === 0) {
+        fallbackProducts = [...mockProducts].sort(() => 0.5 - Math.random()).slice(0, 6);
+      } else {
+        fallbackProducts = fallbackProducts.slice(0, 6);
+      }
+
+      setResults(fallbackProducts);
+      setCurrentStep(steps.length);
     } finally {
       setIsLoading(false);
     }

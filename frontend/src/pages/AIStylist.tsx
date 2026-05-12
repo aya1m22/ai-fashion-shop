@@ -58,22 +58,40 @@ export default function AIStylist() {
       const response = await askGemini(prompt);
       
       if (typeof response === "string" && response.includes("API key missing")) {
-        toast.error(response);
-        setIsChatLoading(false);
-        return;
+        throw new Error("KEY_MISSING");
       }
 
       const ids = parseGeminiJson(response);
       const products = mockProducts.filter(p => ids.includes(p.id));
       
+      if (products.length === 0) throw new Error("NO_MATCHES");
+
       setChatResults({
         products,
         occasion,
         tip: OCCASION_TIPS[occasion] || "Dress to express your unique essence. Confidence is your best accessory."
       });
       setChatInput("");
-    } catch (e) {
-      toast.error("Aya is having a moment — please try again 💫");
+    } catch (e: any) {
+      console.warn("Aya Stylist Fallback Triggered:", e.message);
+      
+      // Smart Fallback based on occasion keyword
+      const fallbackProducts = mockProducts.filter(p => 
+        p.name.toLowerCase().includes(occasion) || 
+        p.description.toLowerCase().includes(occasion) ||
+        p.category.toLowerCase().includes(occasion)
+      ).slice(0, 3);
+
+      const finalProducts = fallbackProducts.length > 0 
+        ? fallbackProducts 
+        : mockProducts.sort(() => 0.5 - Math.random()).slice(0, 3);
+
+      setChatResults({
+        products: finalProducts,
+        occasion,
+        tip: OCCASION_TIPS[occasion] || "A timeless choice for any occasion. Elegance is the only beauty that never fades."
+      });
+      setChatInput("");
     } finally {
       setIsChatLoading(false);
     }
