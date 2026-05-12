@@ -9,7 +9,7 @@ type UseAuthOptions = {
 
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/login" } = options ?? {};
-  const { user, logout: contextLogout, isAdmin } = useAuthContext();
+  const { user, login, signup, logout: contextLogout, verifyEmail, isAdmin } = useAuthContext();
   const [, setLocation] = useLocation();
 
   const logout = useCallback(async () => {
@@ -28,7 +28,10 @@ export function useAuth(options?: UseAuthOptions) {
     user,
     isAuthenticated,
     isAdmin,
+    login,
+    signup,
     logout,
+    verifyEmail,
     loading: false, // Since it's localStorage based, it's instant
     refresh: () => {}
   };

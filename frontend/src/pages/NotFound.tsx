@@ -1,52 +1,64 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
+import { Home, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
 
-  const handleGoHome = () => {
-    setLocation("/");
-  };
-
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
-            </div>
-          </div>
-
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
-
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
-
-          <div
-            id="not-found-button-group"
-            className="flex flex-col sm:flex-row gap-3 justify-center"
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#0D0D0D] text-[#F5F0EB]" style={{ fontFamily: '"DM Sans", sans-serif' }}>
+      <div className="max-w-2xl w-full mx-4 text-center">
+        {/* Decorative Element */}
+        <div className="mb-12 relative flex justify-center">
+          <div className="absolute inset-0 bg-[#C9A84C] opacity-5 rounded-full blur-3xl w-64 h-64 mx-auto -translate-y-1/2" />
+          <h1 
+            className="text-[12rem] md:text-[16rem] font-serif font-bold text-[#1A1A1A] leading-none select-none"
+            style={{ fontFamily: '"Playfair Display", serif' }}
           >
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Go Home
-            </Button>
+            404
+          </h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[10px] uppercase tracking-[0.5em] font-bold text-[#C9A84C] bg-[#0D0D0D] px-4 py-2 border border-[#C9A84C]/20">
+              Page Not Found
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <h2 
+          className="text-4xl md:text-5xl font-serif mb-6 italic"
+          style={{ fontFamily: '"Playfair Display", serif' }}
+        >
+          Lost in the <span className="text-[#C9A84C]">Aesthetic</span>
+        </h2>
+
+        <p className="text-[#A0A0A0] mb-12 max-w-md mx-auto text-lg leading-relaxed">
+          The pieces you are looking for have moved to a new collection, or the gallery path has been altered.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            onClick={() => window.history.back()}
+            variant="outline"
+            className="border-[#333] text-[#A0A0A0] hover:bg-[#1A1A1A] hover:text-[#F5F0EB] px-10 py-7 rounded-none uppercase tracking-widest text-[10px] font-bold transition-all"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Previous Page
+          </Button>
+          <Button
+            onClick={() => setLocation("/")}
+            className="bg-[#C9A84C] hover:bg-[#B0923D] text-black px-10 py-7 rounded-none uppercase tracking-widest text-[10px] font-bold transition-all shadow-[0_0_30px_rgba(201,168,76,0.1)]"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Return Home
+          </Button>
+        </div>
+
+        <div className="mt-24 pt-8 border-t border-[#1A1A1A]">
+          <p className="text-[9px] uppercase tracking-[0.3em] text-[#444]">
+            &copy; STYLEAI LUXURY FASHION. ALL RIGHTS RESERVED.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

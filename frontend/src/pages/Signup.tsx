@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation, Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,10 +39,20 @@ const Signup: React.FC = () => {
         email: formData.email,
         password: formData.password
       });
-      const res = await sendEmail.mutateAsync({ email: formData.email });
-      if (res.previewUrl) {
-        console.log("Verification email preview:", res.previewUrl);
+      
+      // In production/GitHub Pages without a backend, this call will fail.
+      // we catch the error so the user can still see the success screen 
+      // and use the local-storage based auth.
+      try {
+        const res = await sendEmail.mutateAsync({ email: formData.email });
+        if (res.previewUrl) {
+          console.log("Verification email preview:", res.previewUrl);
+        }
+      } catch (trpcErr) {
+        console.warn("API Call failed (likely no backend), proceeding with local signup:", trpcErr);
+        // On GitHub Pages, we can't send emails, so we just log it
       }
+      
       setSuccess(true);
     } catch (err: any) {
       setError(err.message);
@@ -59,7 +69,19 @@ const Signup: React.FC = () => {
             </div>
           </div>
           <h1 className="text-2xl font-serif text-[#F5F0EB] mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>Check Your Email</h1>
-          <p className="text-[#A0A0A0] text-sm mb-8">A verification link has been sent to your email. Please verify before logging in.</p>
+          <p className="text-[#A0A0A0] text-sm mb-4">A verification link has been sent to your email. Please verify before logging in.</p>
+          
+          <div className="bg-[#C9A84C]/10 border border-[#C9A84C]/30 p-4 mb-8">
+            <p className="text-[#C9A84C] text-[10px] uppercase tracking-widest font-bold mb-2">Demo Mode</p>
+            <p className="text-[#A0A0A0] text-xs mb-3">Since you are on a demo environment, you can verify your account directly:</p>
+            <Button 
+              variant="outline"
+              onClick={() => setLocation(`/verify-email?email=${encodeURIComponent(formData.email)}`)}
+              className="w-full border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C] hover:text-black rounded-none text-[10px] uppercase tracking-widest h-9"
+            >
+              Verify Instantly
+            </Button>
+          </div>
           <Button 
             onClick={() => setLocation('/login')}
             className="w-full bg-[#C9A84C] hover:bg-[#B0923D] text-black font-bold h-12 rounded-none transition-all duration-300 uppercase tracking-widest text-xs"

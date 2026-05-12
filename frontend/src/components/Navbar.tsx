@@ -2,15 +2,13 @@ import { Link, useLocation } from "wouter";
 import { ShoppingBag, Heart, User, Sparkles, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
+import { useCart } from "@/contexts/CartContext";
 
 export default function Navbar() {
   const [location, setLocation] = useLocation();
   const { isAuthenticated, user, isAdmin, logout } = useAuth();
+  const { cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const { data: cartItems = [] } = trpc.cart.getItems.useQuery(undefined, { enabled: isAuthenticated });
-  const cartCount = (cartItems as any[]).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
 
   const navLinks = [
     { href: "/women", label: "Women" },
@@ -21,7 +19,12 @@ export default function Navbar() {
   const isActive = (href: string) => location === href || location.startsWith(href + "/");
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0D0D0D] border-b border-[#2A2A2A] shadow-lg">
+    <>
+      {/* Announcement Bar */}
+      <div className="bg-[#C9A84C] text-black py-1.5 text-center text-[10px] uppercase tracking-[0.3em] font-bold">
+        Free shipping on orders over $75 🚚
+      </div>
+      <nav className="sticky top-0 z-50 bg-[#0D0D0D] border-b border-[#2A2A2A] shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -147,5 +150,6 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+    </>
   );
 }

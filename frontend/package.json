@@ -6,7 +6,7 @@
     "dev": "vite --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && gh-pages -d ../dist/public"
+    "deploy": "npm run build && node prepare-deploy.js && gh-pages -d ../dist/public"
   },
   "devDependencies": {
     "baseline-browser-mapping": "^2.10.29",
