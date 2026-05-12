@@ -16,6 +16,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { useState } from "react";
 import { trpc } from "./lib/trpc";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function Router() {
   return (
@@ -28,6 +32,9 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/ai-stylist" component={AIStylist} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -41,6 +48,18 @@ function App() {
       links: [
         httpBatchLink({
           url: "/api/trpc",
+          headers() {
+            const savedUser = localStorage.getItem('styleai_user');
+            if (savedUser) {
+              try {
+                const user = JSON.parse(savedUser);
+                if (user && user.email) {
+                  return { 'x-user-email': user.email };
+                }
+              } catch (e) {}
+            }
+            return {};
+          }
         }),
       ],
     })
@@ -51,10 +70,12 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ErrorBoundary>
           <ThemeProvider defaultTheme="light">
-            <TooltipProvider>
-              <Toaster position="bottom-right" />
-              <Router />
-            </TooltipProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                <Toaster position="bottom-right" />
+                <Router />
+              </TooltipProvider>
+            </AuthProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </QueryClientProvider>

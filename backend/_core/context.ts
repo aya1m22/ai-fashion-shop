@@ -8,16 +8,29 @@ export type TrpcContext = {
   user: User | null;
 };
 
+import { getUserByOpenId, upsertUser } from "../db";
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
+  const email = opts.req.headers["x-user-email"] as string;
 
-  try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
+  if (email) {
+    let u = await getUserByOpenId(email);
+    if (!u) {
+      await upsertUser({ openId: email, email, name: email.split("@")[0] });
+      u = await getUserByOpenId(email);
+    }
+    if (u) user = u;
+  }
+
+  if (!user) {
+    try {
+      user = await sdk.authenticateRequest(opts.req);
+    } catch (error) {
+      user = null;
+    }
   }
 
   return {

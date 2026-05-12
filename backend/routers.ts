@@ -34,6 +34,8 @@ async function ensureSeeded() {
   if (!seeded) { seeded = true; await seedProductsIfEmpty(); }
 }
 
+import { sendVerificationEmail, sendInvoiceEmail } from "./_core/email";
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -44,6 +46,22 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+  }),
+
+  email: router({
+    sendVerification: publicProcedure
+      .input(z.object({ email: z.string() }))
+      .mutation(async ({ input }) => {
+        const verifyUrl = `http://localhost:3000/verify-email?email=${encodeURIComponent(input.email)}`;
+        const url = await sendVerificationEmail(input.email, verifyUrl);
+        return { success: true, previewUrl: url };
+      }),
+    sendInvoice: protectedProcedure
+      .input(z.object({ email: z.string(), items: z.array(z.any()), total: z.string() }))
+      .mutation(async ({ input }) => {
+        const url = await sendInvoiceEmail(input.email, input.items, input.total);
+        return { success: true, previewUrl: url };
+      }),
   }),
 
   products: router({
@@ -105,8 +123,6 @@ export const appRouter = router({
         if (!product) throw new Error("Product not found");
         if (!input.color) throw new Error("Please select a color");
         if (!input.size) throw new Error("Please select a size");
-        const reserve = await reserveProductColorStock(input.productId, input.color, input.quantity);
-        if (!reserve.ok) throw new Error(reserve.error);
         await addToCart(ctx.user.id, input.productId, input.quantity, input.size, input.color);
         return { success: true };
       }),
@@ -156,7 +172,22 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({ totalPrice: z.string(), shippingAddress: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
+        const items = await getCartItems(ctx.user.id);
+        if (items.length === 0) throw new Error("Cart is empty");
+        
+        for (const item of items) {
+          if (item.color) {
+            const reserve = await reserveProductColorStock(item.productId, item.color, item.quantity);
+            if (!reserve.ok) throw new Error(`Stock issue for ${item.product.name}: ${reserve.error}`);
+          }
+        }
+        
         await createOrder(ctx.user.id, input.totalPrice, input.shippingAddress);
+        
+        for (const item of items) {
+          await removeFromCart(item.id);
+        }
+        
         return { success: true };
       }),
   }),
@@ -170,9 +201,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const isMen = input.gender === "men";
 
-        const systemPrompt = isMen
-          ? `You are a professional men's color stylist AI. Your ONLY task is to analyze skin tone from the provided photo and recommend clothing colors, watch metal colors, and ring colors that suit this person. Do NOT analyze body shape, fit, or style preference. If the skin tone is not visible or the image is unclear, set isValid to false. Return ONLY valid JSON matching the schema.`
-          : `You are a professional women's fashion stylist AI. Analyze the provided photo to determine skin tone, body shape, and style preference. Return clothing color recommendations. Return ONLY valid JSON matching the schema.`;
+        const systemPrompt = "You are StyleAI, a luxury personal fashion stylist assistant. Help users find outfits, suggest combinations, advise on trends, and recommend products from the store. Be warm, stylish, and confident. Analyze the provided photo and return color recommendations. Return ONLY valid JSON matching the schema.";
 
         const userPrompt = isMen
           ? `Analyze this photo and return color recommendations for men's clothing, watches, and rings based on the detected skin tone.`
@@ -229,11 +258,11 @@ export const appRouter = router({
                 role: "user",
                 content: [
                   { type: "image_url", image_url: { url: input.imageUrl, detail: "high" } },
-                  { type: "text", text: userPrompt },
+                  { type: "text", text: userPrompt + "\n\nYou MUST return ONLY valid JSON matching this schema:\n" + JSON.stringify(responseSchema) },
                 ],
               },
             ],
-            response_format: responseSchema as any,
+            responseFormat: { type: "json_object" },
           });
           const content = llmResult?.choices?.[0]?.message?.content;
           analysisData = typeof content === "string" ? JSON.parse(content) : content;
@@ -251,13 +280,10 @@ export const appRouter = router({
           };
         }
 
-        // Fetch products matching the gender
         const allProducts = await getProducts(input.gender, 200, 0);
-
         let recommendedProducts: any[] = [];
 
         if (isMen) {
-          // For men: filter by recommended clothing colors and accessory metal colors
           const clothingColors: string[] = (analysisData.clothingColors || []).map((c: string) => c.toLowerCase());
           const watchColors: string[] = (analysisData.watchColors || []).map((c: string) => c.toLowerCase());
           const ringColors: string[] = (analysisData.ringColors || []).map((c: string) => c.toLowerCase());
@@ -279,7 +305,6 @@ export const appRouter = router({
 
           recommendedProducts = [...clothingItems, ...watchItems, ...ringItems];
         } else {
-          // For women: filter by recommended colors
           const recColors: string[] = (analysisData.colorRecommendations || []).map((c: string) => c.toLowerCase());
           recommendedProducts = allProducts.filter((p: any) =>
             p.colors?.some((c: string) => recColors.includes(c.toLowerCase()))
@@ -292,6 +317,39 @@ export const appRouter = router({
           success: true,
           analysis: analysisData,
           recommendations: recommendedProducts,
+        };
+      }),
+
+    outfitBuilder: protectedProcedure
+      .input(z.object({
+        gender: z.enum(["men", "women"]),
+        occasion: z.string(),
+        palette: z.string(),
+        budget: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const systemPrompt = `You are StyleAI, a luxury personal fashion stylist. 
+        Create a complete outfit (Top, Bottom, Shoes, Accessory) based on:
+        Occasion: ${input.occasion}
+        Palette: ${input.palette}
+        Budget: ${input.budget}
+        Return ONLY JSON with "explanation" and "items" (array of subcategory names like ["Shirts", "Pants", "Shoes", "Accessories"]).`;
+
+        const llmResult = await invokeLLM({
+          messages: [{ role: "system", content: systemPrompt }],
+          response_format: { type: "json_object" }
+        });
+        
+        const content = JSON.parse(llmResult.choices[0].message.content as string);
+        
+        const allProducts = await getProducts(input.gender, 100, 0);
+        const selectedItems = content.items.map((sub: string) => {
+          return allProducts.find(p => p.subcategory.toLowerCase() === sub.toLowerCase());
+        }).filter(Boolean);
+
+        return {
+          explanation: content.explanation,
+          items: selectedItems
         };
       }),
   }),

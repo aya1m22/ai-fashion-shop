@@ -105,15 +105,15 @@ export default function AdminDashboard() {
     setEditState({ ...editState, colorStock: { ...editState.colorStock, [color]: num } });
   };
 
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || !user?.isAdmin) {
     return (
-      <div className="min-h-screen bg-stone-50">
+      <div className="min-h-screen bg-[#0D0D0D]">
         <Navbar />
         <div className="container py-20 text-center">
-          <Package className="w-16 h-16 text-stone-300 mx-auto mb-4" />
-          <h2 className="font-display text-2xl font-bold text-stone-900 mb-2">Admin Dashboard</h2>
-          <p className="text-stone-500 mb-4">You need admin access to view this page.</p>
-          <Link href="/" className="text-stone-900 font-medium underline">Back to Home</Link>
+          <Package className="w-16 h-16 text-[#333] mx-auto mb-4" />
+          <h2 className="font-display text-2xl font-bold text-[#F5F0EB] mb-2">Admin Dashboard</h2>
+          <p className="text-[#A0A0A0] mb-4">You need admin access to view this page.</p>
+          <Link href="/" className="text-[#F5F0EB] font-medium underline">Back to Home</Link>
         </div>
       </div>
     );
@@ -123,47 +123,47 @@ export default function AdminDashboard() {
   const outOfStock = (products as any[]).filter((p: any) => (p.stock || 0) <= 0).length;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[#0D0D0D]">
       <Navbar />
 
       <div className="container py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="font-display text-3xl font-bold text-stone-900">Inventory Management</h1>
-            <p className="text-stone-500 text-sm mt-1">Manage product stock, sizes, and pricing</p>
+            <h1 className="font-display text-3xl font-bold text-[#F5F0EB]">Inventory Management</h1>
+            <p className="text-[#A0A0A0] text-sm mt-1">Manage product stock, sizes, and pricing</p>
           </div>
           <div className="flex gap-4">
-            <div className="bg-white rounded-xl border border-stone-100 px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-stone-900">{(products as any[]).length}</p>
-              <p className="text-xs text-stone-500">Total Products</p>
+            <div className="bg-[#1A1A1A] rounded-none border border-[#2A2A2A] px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-[#F5F0EB]">{(products as any[]).length}</p>
+              <p className="text-xs text-[#A0A0A0]">Total Products</p>
             </div>
-            <div className="bg-white rounded-xl border border-stone-100 px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-stone-900">{totalStock}</p>
-              <p className="text-xs text-stone-500">Total Stock</p>
+            <div className="bg-[#1A1A1A] rounded-none border border-[#2A2A2A] px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-[#F5F0EB]">{totalStock}</p>
+              <p className="text-xs text-[#A0A0A0]">Total Stock</p>
             </div>
-            <div className="bg-red-50 rounded-xl border border-red-100 px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-red-600">{outOfStock}</p>
-              <p className="text-xs text-red-500">Out of Stock</p>
+            <div className="bg-red-900/20 rounded-none border border-red-900 px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-red-500">{outOfStock}</p>
+              <p className="text-xs text-red-400">Out of Stock</p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl border border-stone-100 p-4 mb-6 flex flex-wrap gap-4">
+        <div className="bg-[#1A1A1A] rounded-none border border-[#2A2A2A] p-4 mb-6 flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-48">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0A0A0]" />
             <input
               type="text"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-stone-500"
+              className="w-full pl-9 pr-4 py-2 bg-transparent border border-[#333] rounded-none text-sm text-[#F5F0EB] focus:outline-none focus:border-[#C9A84C]"
             />
           </div>
           <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value as any)}
-            className="px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-stone-500 bg-white"
+            className="px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-none text-sm text-[#F5F0EB] focus:outline-none focus:border-[#C9A84C]"
           >
             <option value="all">All Genders</option>
             <option value="women">Women</option>
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
           <select
             value={subcatFilter}
             onChange={(e) => setSubcatFilter(e.target.value)}
-            className="px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-stone-500 bg-white"
+            className="px-3 py-2 bg-[#1A1A1A] border border-[#333] rounded-none text-sm text-[#F5F0EB] focus:outline-none focus:border-[#C9A84C]"
           >
             <option value="all">All Categories</option>
             {subcategories.map((s) => (
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
         {/* Product Table */}
         {isLoading ? (
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="w-8 h-8 animate-spin text-stone-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#A0A0A0]" />
           </div>
         ) : (
           <div className="space-y-3">
@@ -196,27 +196,27 @@ export default function AdminDashboard() {
               const sizeOptions = getSizeOptions(product);
 
               return (
-                <div key={product.id} className="bg-white rounded-xl border border-stone-100 overflow-hidden">
+                <div key={product.id} className="bg-[#1A1A1A] rounded-none border border-[#2A2A2A] overflow-hidden">
                   {/* Product Row */}
                   <div className="p-4 flex items-center gap-4">
                     <img
                       src={product.imageUrl}
                       alt={product.name}
-                      className="w-12 h-14 object-cover rounded-lg bg-stone-100 shrink-0"
+                      className="w-12 h-14 object-cover rounded-none bg-[#0D0D0D] shrink-0"
                       onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=100&q=80"; }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-stone-900 text-sm truncate">{product.name}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          product.gender === "women" ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                        <h3 className="font-medium text-[#F5F0EB] text-sm truncate">{product.name}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-none font-medium ${
+                          product.gender === "women" ? "bg-rose-900/20 text-rose-400" : "bg-blue-900/20 text-blue-400"
                         }`}>{product.gender}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 capitalize">{product.subcategory}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-none bg-[#333] text-[#A0A0A0] capitalize">{product.subcategory}</span>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-stone-500">
+                      <div className="flex items-center gap-4 text-xs text-[#A0A0A0]">
                         <span>ID: {product.id}</span>
                         <span>Price: ${parseFloat(String(product.price)).toFixed(2)}</span>
-                        <span className={`font-medium ${totalProductStock <= 0 ? "text-red-600" : totalProductStock <= 5 ? "text-amber-600" : "text-green-600"}`}>
+                        <span className={`font-medium ${totalProductStock <= 0 ? "text-red-500" : totalProductStock <= 5 ? "text-amber-500" : "text-green-500"}`}>
                           Stock: {totalProductStock}
                         </span>
                       </div>
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                         <div
                           key={color}
                           title={`${color}: ${stock}`}
-                          className={`w-5 h-5 rounded-full border-2 ${stock <= 0 ? "border-red-400 opacity-50" : "border-stone-200"}`}
+                          className={`w-5 h-5 rounded-full border-2 ${stock <= 0 ? "border-red-500 opacity-50" : "border-[#333]"}`}
                           style={{ backgroundColor: getColorHex(color) }}
                         />
                       ))}
@@ -238,14 +238,14 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setExpandedId(isExpanded ? null : product.id)}
-                        className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 transition"
+                        className="p-1.5 rounded-none text-[#A0A0A0] hover:bg-[#2A2A2A] transition"
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                       {!isEditing ? (
                         <button
                           onClick={() => { startEdit(product); setExpandedId(product.id); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium bg-[#333] text-[#F5F0EB] hover:bg-[#444] transition"
                         >
                           <Edit2 className="w-3 h-3" />
                           Edit
@@ -255,14 +255,14 @@ export default function AdminDashboard() {
                           <button
                             onClick={() => saveEdit(product.id)}
                             disabled={updateInventory.isPending}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium bg-[#C9A84C] text-black hover:bg-[#B0923D] transition disabled:opacity-50"
                           >
                             {updateInventory.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                             Save
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-100 text-stone-700 hover:bg-stone-200 transition"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium bg-[#333] text-[#F5F0EB] hover:bg-[#444] transition"
                           >
                             <X className="w-3 h-3" />
                             Cancel
@@ -274,25 +274,25 @@ export default function AdminDashboard() {
 
                   {/* Expanded Edit Panel */}
                   {(isExpanded || isEditing) && (
-                    <div className="border-t border-stone-100 p-4 bg-stone-50">
+                    <div className="border-t border-[#2A2A2A] p-4 bg-[#111]">
                       {isEditing && editState ? (
                         <div className="space-y-5">
                           {/* Price */}
                           <div>
-                            <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-2 block">Price ($)</label>
+                            <label className="text-[10px] font-bold text-[#C9A84C] uppercase tracking-wider mb-2 block">Price ($)</label>
                             <input
                               type="number"
                               step="0.01"
                               min="0"
                               value={editState.price}
                               onChange={(e) => setEditState({ ...editState, price: e.target.value })}
-                              className="w-32 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-stone-500 bg-white"
+                              className="w-32 px-3 py-2 bg-transparent border border-[#333] rounded-none text-sm text-[#F5F0EB] focus:outline-none focus:border-[#C9A84C]"
                             />
                           </div>
 
                           {/* Sizes */}
                           <div>
-                            <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-2 block">
+                            <label className="text-[10px] font-bold text-[#C9A84C] uppercase tracking-wider mb-2 block">
                               Sizes {isShoeProduct(product) ? "(US Shoe Sizes)" : isRingProduct(product) ? "(Ring Sizes)" : ""}
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -300,10 +300,10 @@ export default function AdminDashboard() {
                                 <button
                                   key={size}
                                   onClick={() => toggleSize(size)}
-                                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
+                                  className={`px-3 py-1.5 rounded-none border text-xs font-medium transition ${
                                     editState.sizes.includes(size)
-                                      ? "bg-stone-900 text-white border-stone-900"
-                                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-500"
+                                      ? "bg-[#C9A84C] text-black border-[#C9A84C]"
+                                      : "bg-transparent text-[#A0A0A0] border-[#333] hover:border-[#F5F0EB]"
                                   }`}
                                 >
                                   {size}
@@ -314,24 +314,24 @@ export default function AdminDashboard() {
 
                           {/* Color Stock */}
                           <div>
-                            <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider mb-2 block">
+                            <label className="text-[10px] font-bold text-[#C9A84C] uppercase tracking-wider mb-2 block">
                               Color Stock (set to 0 to mark as out of stock — button will turn red)
                             </label>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                               {Object.entries(editState.colorStock).map(([color, stock]) => (
-                                <div key={color} className="flex items-center gap-2 bg-white rounded-lg border border-stone-200 p-2">
+                                <div key={color} className="flex items-center gap-2 bg-[#1A1A1A] rounded-none border border-[#333] p-2">
                                   <div
-                                    className="w-6 h-6 rounded-full border border-stone-200 shrink-0"
+                                    className="w-6 h-6 rounded-full border border-[#444] shrink-0"
                                     style={{ backgroundColor: getColorHex(color) }}
                                   />
-                                  <span className="text-xs font-medium text-stone-700 flex-1 truncate">{color.replace("_", " ")}</span>
+                                  <span className="text-xs font-medium text-[#F5F0EB] flex-1 truncate">{color.replace("_", " ")}</span>
                                   <input
                                     type="number"
                                     min="0"
                                     value={stock}
                                     onChange={(e) => updateColorStock(color, e.target.value)}
-                                    className={`w-14 px-2 py-1 border rounded text-xs text-center focus:outline-none ${
-                                      stock <= 0 ? "border-red-300 bg-red-50 text-red-600" : "border-stone-200 focus:border-stone-500"
+                                    className={`w-14 px-2 py-1 bg-transparent border rounded-none text-xs text-center focus:outline-none ${
+                                      stock <= 0 ? "border-red-500 text-red-500" : "border-[#444] text-[#F5F0EB] focus:border-[#C9A84C]"
                                     }`}
                                   />
                                 </div>
@@ -343,21 +343,21 @@ export default function AdminDashboard() {
                         /* Read-only expanded view */
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Sizes</p>
+                            <p className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-wider mb-2">Sizes</p>
                             <div className="flex flex-wrap gap-1.5">
                               {(Array.isArray(product.sizes) ? product.sizes : []).map((s: string) => (
-                                <span key={s} className="text-xs px-2 py-1 bg-white border border-stone-200 rounded-md text-stone-700">{s}</span>
+                                <span key={s} className="text-xs px-2 py-1 bg-transparent border border-[#333] rounded-none text-[#F5F0EB]">{s}</span>
                               ))}
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Color Stock</p>
+                            <p className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-wider mb-2">Color Stock</p>
                             <div className="flex flex-wrap gap-2">
                               {Object.entries(colorStock).map(([color, stock]) => (
-                                <div key={color} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs ${
-                                  stock <= 0 ? "bg-red-50 border-red-200 text-red-600" :
-                                  stock <= 3 ? "bg-amber-50 border-amber-200 text-amber-700" :
-                                  "bg-green-50 border-green-200 text-green-700"
+                                <div key={color} className={`flex items-center gap-1.5 px-2 py-1 rounded-none border text-xs ${
+                                  stock <= 0 ? "bg-red-900/20 border-red-500/50 text-red-400" :
+                                  stock <= 3 ? "bg-amber-900/20 border-amber-500/50 text-amber-400" :
+                                  "bg-green-900/20 border-green-500/50 text-green-400"
                                 }`}>
                                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getColorHex(color) }} />
                                   <span>{color.replace("_", " ")}: {stock}</span>
