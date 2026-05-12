@@ -1,4 +1,4 @@
-import { decimal, integer as int, json, pgEnum, pgTable, text, timestamp, varchar, serial } from "drizzle-orm/pg-core";
+import { decimal, integer as int, json, pgEnum, pgTable, text, timestamp, varchar, serial, boolean } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const genderEnum = pgEnum("gender", ["men", "women"]);
@@ -22,6 +22,35 @@ export const users = pgTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// User Profiles table for additional details
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  phone: varchar("phone", { length: 20 }),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  country: varchar("country", { length: 100 }),
+  preferences: json("preferences"),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof userProfiles.$inferInsert;
+
+// Categories table for better organization
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  parentCategoryId: int("parent_category_id"),
+  gender: genderEnum("gender"),
+  imageUrl: varchar("image_url", { length: 500 }),
+  isActive: boolean("is_active").default(true),
+});
+
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = typeof categories.$inferInsert;
+
 // Products table — gender is strict: "men" | "women"
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -29,8 +58,9 @@ export const products = pgTable("products", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   gender: genderEnum("gender").notNull(),
-  subcategory: varchar("subcategory", { length: 100 }).notNull(),
-  imageUrl: varchar("image_url", { length: 500 }),
+  categoryId: int("category_id"), // Linked to categories table
+  subcategory: varchar("subcategory", { length: 100 }).notNull(), // Legacy field, keeping for compatibility
+  imageUrl: varchar("image_url", { length: 500 }), // Primary image
   sizes: json("sizes").$type<string[]>(),
   colors: json("colors").$type<string[]>(),
   colorStock: json("color_stock").$type<Record<string, number>>(),
@@ -42,6 +72,19 @@ export const products = pgTable("products", {
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
+
+// Multiple images per product
+export const productImages = pgTable("product_images", {
+  id: serial("id").primaryKey(),
+  productId: int("product_id").notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  altText: varchar("alt_text", { length: 255 }),
+  isPrimary: boolean("is_primary").default(false),
+  displayOrder: int("display_order").default(0),
+});
+
+export type ProductImage = typeof productImages.$inferSelect;
+export type InsertProductImage = typeof productImages.$inferInsert;
 
 // Cart items table
 export const cartItems = pgTable("cart_items", {

@@ -12,6 +12,8 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       if (!queryClient) {
+        const url = new URL(process.env.DATABASE_URL);
+        console.log(`[Database] Connecting to host: ${url.host}`);
         queryClient = postgres(process.env.DATABASE_URL);
       }
       _db = drizzle(queryClient);

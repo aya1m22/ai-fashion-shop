@@ -42,6 +42,9 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError: ({ error, path }) => {
+        console.error(`[tRPC Error] ${path}:`, error);
+      },
     })
   );
   // development mode uses Vite, production mode uses static files
@@ -62,6 +65,11 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+  });
+
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("[Global Error]:", err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
   });
 }
 
