@@ -1,0 +1,38 @@
+{
+  "query": "SELECT id, name, gender, subcategory, sizes FROM products WHERE subcategory = 'shoes' LIMIT 4;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user VfVXGL2LgvEtAsZ.root --database 3F6TPGMJthxFz37SrfMAfa --execute SELECT id, name, gender, subcategory, sizes FROM products WHERE subcategory = 'shoes' LIMIT 4;",
+  "rows": [
+    {
+      "id": "1024",
+      "name": "Strappy Heeled Sandals",
+      "gender": "women",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\"]"
+    },
+    {
+      "id": "1025",
+      "name": "White Leather Sneakers",
+      "gender": "women",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    },
+    {
+      "id": "1026",
+      "name": "Pointed-Toe Kitten Heels",
+      "gender": "women",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    },
+    {
+      "id": "1027",
+      "name": "Suede Ankle Boots",
+      "gender": "women",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgender\tsubcategory\tsizes\n1024\tStrappy Heeled Sandals\twomen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\"]\n1025\tWhite Leather Sneakers\twomen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n1026\tPointed-Toe Kitten Heels\twomen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n1027\tSuede Ankle Boots\twomen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n",
+  "stderr": "",
+  "execution_time_ms": 556
+}

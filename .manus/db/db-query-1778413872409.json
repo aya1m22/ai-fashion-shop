@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, name, gender, subcategory, sizes FROM products WHERE subcategory = 'shoes' AND gender = 'men' LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user VfVXGL2LgvEtAsZ.root --database 3F6TPGMJthxFz37SrfMAfa --execute SELECT id, name, gender, subcategory, sizes FROM products WHERE subcategory = 'shoes' AND gender = 'men' LIMIT 3;",
+  "rows": [
+    {
+      "id": "2013",
+      "name": "Leather Oxford Shoes",
+      "gender": "men",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    },
+    {
+      "id": "2014",
+      "name": "White Leather Sneakers",
+      "gender": "men",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    },
+    {
+      "id": "2015",
+      "name": "Chelsea Boots",
+      "gender": "men",
+      "subcategory": "shoes",
+      "sizes": "[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgender\tsubcategory\tsizes\n2013\tLeather Oxford Shoes\tmen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n2014\tWhite Leather Sneakers\tmen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n2015\tChelsea Boots\tmen\tshoes\t[\"6\", \"7\", \"8\", \"9\", \"10\", \"11\", \"12\"]\n",
+  "stderr": "",
+  "execution_time_ms": 607
+}
