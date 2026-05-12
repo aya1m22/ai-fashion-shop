@@ -1,25 +1,30 @@
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-
 export async function askGemini(prompt: string) {
-  if (!GEMINI_API_KEY) {
-    console.error("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your .env file.");
-    throw new Error("API_KEY_MISSING");
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey || apiKey === "your_actual_key_here") {
+    console.error("No API key found");
+    return "AI features unavailable — API key missing. Please add your key to the .env file.";
   }
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+          generationConfig: { 
+            temperature: 0.7, 
+            maxOutputTokens: 500 
+          }
         })
       }
     );
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API Error Response:", errorData);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
