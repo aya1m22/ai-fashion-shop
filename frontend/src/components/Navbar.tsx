@@ -11,6 +11,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
+    { href: "/shop", label: "Shop" },
     { href: "/women", label: "Women" },
     { href: "/men", label: "Men" },
     { href: "/wardrobe", label: "Wardrobe" },

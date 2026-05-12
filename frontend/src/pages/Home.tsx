@@ -8,7 +8,12 @@ import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight, TrendingUp } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { mockProducts } from '@/lib/mockProducts';
+import { Skeleton } from '@/components/ui/skeleton';
+import { trpc } from '@/lib/trpc';
+import { catalogToProduct } from '@/lib/catalogAdapter';
+import { initialCatalog } from '@shared/catalog';
+
+const STATIC_TRENDING = initialCatalog.slice(0, 4).map(catalogToProduct);
 
 const Home: React.FC = () => {
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -17,9 +22,11 @@ const Home: React.FC = () => {
     document.title = "StyleAI — Luxury AI-Curated Fashion";
   }, []);
 
-  const trendingProducts = React.useMemo(() => {
-    return mockProducts.slice(0, 4);
-  }, []);
+  const { data: rawTrending, isError: trendingError } = trpc.products.list.useQuery({ limit: 4 });
+  const trendingProducts = React.useMemo(
+    () => trendingError ? STATIC_TRENDING : (rawTrending ?? []).map(catalogToProduct).slice(0, 4),
+    [rawTrending, trendingError],
+  );
 
   const categories = [
     { name: 'Dresses', href: '/women' },
@@ -110,9 +117,19 @@ const Home: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {trendingProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {trendingLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-[#111] border border-[#2A2A2A] overflow-hidden">
+                  <Skeleton className="h-[320px] w-full bg-[#1A1A1A]" />
+                  <div className="p-6 space-y-3">
+                    <Skeleton className="h-4 w-3/4 bg-[#1A1A1A]" />
+                    <Skeleton className="h-4 w-1/3 bg-[#1A1A1A]" />
+                  </div>
+                </div>
+              ))
+            : trendingProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
       </section>
 

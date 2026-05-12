@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
+import { analyzePhotoWithGemini } from "./gemini";
 import {
   addFavorite,
   addToCart,
@@ -199,116 +200,66 @@ export const appRouter = router({
         gender: z.enum(["men", "women"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        const isMen = input.gender === "men";
+        let analysisData: Awaited<ReturnType<typeof analyzePhotoWithGemini>>;
 
-        const systemPrompt = "You are StyleAI, a luxury personal fashion stylist assistant. Help users find outfits, suggest combinations, advise on trends, and recommend products from the store. Be warm, stylish, and confident. Analyze the provided photo and return color recommendations. Return ONLY valid JSON matching the schema.";
-
-        const userPrompt = isMen
-          ? `Analyze this photo and return color recommendations for men's clothing, watches, and rings based on the detected skin tone.`
-          : `Analyze this photo and return fashion recommendations including skin tone, body shape, style preference, and color recommendations.`;
-
-        const responseSchema = isMen
-          ? {
-              type: "json_schema",
-              json_schema: {
-                name: "men_color_analysis",
-                strict: true,
-                schema: {
-                  type: "object",
-                  properties: {
-                    isValid: { type: "boolean", description: "Whether skin tone was detectable" },
-                    message: { type: "string", description: "Status message or error reason" },
-                    skinTone: { type: "string", description: "Detected skin tone category: warm, cool, neutral, or deep" },
-                    clothingColors: { type: "array", items: { type: "string" }, description: "Recommended clothing colors for this skin tone" },
-                    watchColors: { type: "array", items: { type: "string" }, description: "Recommended watch metal colors: Gold, Silver, Black, White" },
-                    ringColors: { type: "array", items: { type: "string" }, description: "Recommended ring metal colors: Gold, Silver, Black, White" },
-                  },
-                  required: ["isValid", "message", "skinTone", "clothingColors", "watchColors", "ringColors"],
-                  additionalProperties: false,
-                },
-              },
-            }
-          : {
-              type: "json_schema",
-              json_schema: {
-                name: "women_style_analysis",
-                strict: true,
-                schema: {
-                  type: "object",
-                  properties: {
-                    isValid: { type: "boolean" },
-                    message: { type: "string" },
-                    skinTone: { type: "string" },
-                    bodyShape: { type: "string" },
-                    stylePreference: { type: "string" },
-                    colorRecommendations: { type: "array", items: { type: "string" } },
-                  },
-                  required: ["isValid", "message", "skinTone", "bodyShape", "stylePreference", "colorRecommendations"],
-                  additionalProperties: false,
-                },
-              },
-            };
-
-        let analysisData: any;
         try {
-          const llmResult = await invokeLLM({
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: [
-                  { type: "image_url", image_url: { url: input.imageUrl, detail: "high" } },
-                  { type: "text", text: userPrompt + "\n\nYou MUST return ONLY valid JSON matching this schema:\n" + JSON.stringify(responseSchema) },
-                ],
-              },
-            ],
-            responseFormat: { type: "json_object" },
-          });
-          const content = llmResult?.choices?.[0]?.message?.content;
-          analysisData = typeof content === "string" ? JSON.parse(content) : content;
+          analysisData = await analyzePhotoWithGemini(input.imageUrl);
         } catch (err) {
-          console.error("[AI Stylist] LLM error:", err);
-          throw new Error("Failed to analyze photo. Please try again with a clear photo.");
+          console.error("[AI Stylist] Gemini error:", err);
+          throw new Error("Failed to analyse photo. Please try again with a clear, well-lit photo showing your face.");
         }
 
-        if (!analysisData?.isValid) {
+        if (!analysisData.isValid) {
           return {
             success: false,
-            error: analysisData?.message || "Could not detect skin tone. Please upload a clear photo with visible skin.",
+            error: analysisData.message || "Could not detect skin tone. Please upload a clear photo with visible skin.",
             analysis: null,
             recommendations: [],
+            detectedGender: analysisData.detectedGender,
           };
         }
 
+        // Gender mismatch: warn but still return results for the selected gender
+        const genderMismatch =
+          analysisData.detectedGender !== "unknown" &&
+          analysisData.detectedGender !== input.gender;
+
         const allProducts = await getProducts(input.gender, 200, 0);
-        let recommendedProducts: any[] = [];
+        const bestColorTokens = analysisData.bestColors.map((c) => c.toLowerCase());
 
-        if (isMen) {
-          const clothingColors: string[] = (analysisData.clothingColors || []).map((c: string) => c.toLowerCase());
-          const watchColors: string[] = (analysisData.watchColors || []).map((c: string) => c.toLowerCase());
-          const ringColors: string[] = (analysisData.ringColors || []).map((c: string) => c.toLowerCase());
+        // Match products whose catalog colors overlap with recommended palette
+        const colorMatched = allProducts.filter((p: any) =>
+          (p.colors as string[])?.some((c) =>
+            bestColorTokens.some((bc) => c.toLowerCase().includes(bc) || bc.includes(c.toLowerCase()))
+          )
+        );
 
-          const clothingItems = allProducts.filter((p: any) => {
-            if (p.subcategory === "accessories") return false;
-            return p.colors?.some((c: string) => clothingColors.includes(c.toLowerCase()));
-          }).slice(0, 6);
+        // Accessory metal matching for men
+        const metal = analysisData.accessoryMetal;
+        const metalTokens = metal === "either" ? ["gold", "silver"] : [metal];
 
-          const watchItems = allProducts.filter((p: any) =>
-            p.subcategory === "accessories" && p.styleTags?.includes("watch") &&
-            p.colors?.some((c: string) => watchColors.includes(c.toLowerCase()))
-          ).slice(0, 2);
+        let recommendedProducts: any[];
 
-          const ringItems = allProducts.filter((p: any) =>
-            p.subcategory === "accessories" && p.styleTags?.includes("ring") &&
-            p.colors?.some((c: string) => ringColors.includes(c.toLowerCase()))
-          ).slice(0, 2);
+        if (input.gender === "men") {
+          const clothingItems = colorMatched
+            .filter((p: any) => p.subcategory !== "accessories")
+            .slice(0, 5);
 
-          recommendedProducts = [...clothingItems, ...watchItems, ...ringItems];
+          const accessoryItems = allProducts.filter((p: any) => {
+            if (p.subcategory !== "accessories") return false;
+            return (p.colors as string[])?.some((c) =>
+              metalTokens.some((m) => c.toLowerCase().includes(m))
+            );
+          }).slice(0, 3);
+
+          recommendedProducts = [...clothingItems, ...accessoryItems];
         } else {
-          const recColors: string[] = (analysisData.colorRecommendations || []).map((c: string) => c.toLowerCase());
-          recommendedProducts = allProducts.filter((p: any) =>
-            p.colors?.some((c: string) => recColors.includes(c.toLowerCase()))
-          ).slice(0, 9);
+          recommendedProducts = colorMatched.slice(0, 9);
+        }
+
+        // Fallback: if color matching yields nothing, return random items from selected gender
+        if (recommendedProducts.length === 0) {
+          recommendedProducts = allProducts.slice(0, input.gender === "men" ? 8 : 9);
         }
 
         await saveAIRecommendation(ctx.user.id, analysisData, recommendedProducts);
@@ -317,6 +268,8 @@ export const appRouter = router({
           success: true,
           analysis: analysisData,
           recommendations: recommendedProducts,
+          detectedGender: analysisData.detectedGender,
+          genderMismatch,
         };
       }),
 

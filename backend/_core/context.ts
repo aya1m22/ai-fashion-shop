@@ -17,12 +17,16 @@ export async function createContext(
   const email = opts.req.headers["x-user-email"] as string;
 
   if (email) {
-    let u = await getUserByOpenId(email);
-    if (!u) {
-      await upsertUser({ openId: email, email, name: email.split("@")[0] });
-      u = await getUserByOpenId(email);
+    try {
+      let u = await getUserByOpenId(email);
+      if (!u) {
+        await upsertUser({ openId: email, email, name: email.split("@")[0] });
+        u = await getUserByOpenId(email);
+      }
+      if (u) user = u;
+    } catch (error) {
+      console.warn("[Context] DB lookup failed for email auth, continuing as unauthenticated:", error);
     }
-    if (u) user = u;
   }
 
   if (!user) {

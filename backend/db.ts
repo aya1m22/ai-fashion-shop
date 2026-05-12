@@ -48,14 +48,19 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
     await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
-  } catch (error) { console.error("[Database] Failed to upsert user:", error); throw error; }
+  } catch (error) { console.error("[Database] Failed to upsert user:", error); }
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.warn("[Database] getUserByOpenId failed:", error);
+    return undefined;
+  }
 }
 
 // ─── In-memory catalog helpers ────────────────────────────────────────────────
@@ -82,15 +87,19 @@ export async function getProducts(
 ) {
   const db = await getDb();
   if (db) {
-    let query = db.select().from(products).$dynamic();
-    const conditions = [];
-    if (gender && (gender === "men" || gender === "women")) conditions.push(eq(products.gender, gender));
-    if (subcategory) conditions.push(eq(products.subcategory, subcategory));
-    if (minPrice !== undefined) conditions.push(gte(products.price, String(minPrice)));
-    if (maxPrice !== undefined) conditions.push(lte(products.price, String(maxPrice)));
-    if (conditions.length > 0) query = query.where(and(...conditions)) as typeof query;
-    const rows = await query.limit(limit).offset(offset);
-    return rows.map(normalizeDbProduct);
+    try {
+      let query = db.select().from(products).$dynamic();
+      const conditions = [];
+      if (gender && (gender === "men" || gender === "women")) conditions.push(eq(products.gender, gender));
+      if (subcategory) conditions.push(eq(products.subcategory, subcategory));
+      if (minPrice !== undefined) conditions.push(gte(products.price, String(minPrice)));
+      if (maxPrice !== undefined) conditions.push(lte(products.price, String(maxPrice)));
+      if (conditions.length > 0) query = query.where(and(...conditions)) as typeof query;
+      const rows = await query.limit(limit).offset(offset);
+      return rows.map(normalizeDbProduct);
+    } catch (error) {
+      console.warn("[Database] getProducts query failed, falling back to memory:", error);
+    }
   }
   // fallback to memory
   let list = memoryProducts.map(cloneProduct);
@@ -104,8 +113,12 @@ export async function getProducts(
 export async function getProductById(id: number) {
   const db = await getDb();
   if (db) {
-    const rows = await db.select().from(products).where(eq(products.id, id)).limit(1);
-    if (rows.length > 0) return normalizeDbProduct(rows[0]);
+    try {
+      const rows = await db.select().from(products).where(eq(products.id, id)).limit(1);
+      if (rows.length > 0) return normalizeDbProduct(rows[0]);
+    } catch (error) {
+      console.warn("[Database] getProductById query failed, falling back to memory:", error);
+    }
   }
   const p = getMemoryProduct(id);
   return p ? cloneProduct(p) : null;
@@ -256,8 +269,12 @@ let memoryFavoriteId = 1;
 export async function getFavoritesByUser(userId: number) {
   const db = await getDb();
   if (db) {
-    const rows = await db.select().from(favorites).where(eq(favorites.userId, userId));
-    return Promise.all(rows.map(async (row: any) => ({ ...row, product: await getProductById(row.productId) })));
+    try {
+      const rows = await db.select().from(favorites).where(eq(favorites.userId, userId));
+      return Promise.all(rows.map(async (row: any) => ({ ...row, product: await getProductById(row.productId) })));
+    } catch (error) {
+      console.warn("[Database] getFavoritesByUser failed, falling back to memory:", error);
+    }
   }
   return memoryFavorites.filter((r) => r.userId === userId).map((r) => ({ ...r, product: getMemoryProduct(r.productId) ? cloneProduct(getMemoryProduct(r.productId)!) : null }));
 }
@@ -265,8 +282,12 @@ export async function getFavoritesByUser(userId: number) {
 export async function isFavorite(userId: number, productId: number) {
   const db = await getDb();
   if (db) {
-    const rows = await db.select().from(favorites).where(and(eq(favorites.userId, userId), eq(favorites.productId, productId))).limit(1);
-    return rows.length > 0;
+    try {
+      const rows = await db.select().from(favorites).where(and(eq(favorites.userId, userId), eq(favorites.productId, productId))).limit(1);
+      return rows.length > 0;
+    } catch (error) {
+      console.warn("[Database] isFavorite failed, falling back to memory:", error);
+    }
   }
   return memoryFavorites.some((r) => r.userId === userId && r.productId === productId);
 }

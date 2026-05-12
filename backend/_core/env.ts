@@ -9,4 +9,6 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   supabaseUrl: process.env.VITE_SUPABASE_URL ?? "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  // Falls back to VITE_ prefix so the same key works for frontend and backend
+  geminiApiKey: process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY ?? "",
 };

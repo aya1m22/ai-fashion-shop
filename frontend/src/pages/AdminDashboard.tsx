@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">
                   <span>ID: {product.id}</span>
                   <span className="text-[#C9A84C]">${product.price}</span>
-                  <span className={product.stockStatus === 'Low Stock' ? 'text-orange-500' : 'text-green-800'}>{product.stockStatus}</span>
+                  <span className={product.stock === 'low stock' ? 'text-orange-500' : product.stock === 'out of stock' ? 'text-red-500' : 'text-green-600'}>{product.stock}</span>
                 </div>
               </div>
               <div className="flex items-center gap-4">

@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { catalogToProduct } from "@/lib/catalogAdapter";
 import { toast } from "sonner";
 
 export default function Profile() {
@@ -42,7 +43,10 @@ export default function Profile() {
     );
   }
 
-  const favorites = (favList as any[]).map((f: any) => f.product).filter(Boolean);
+  const favorites = (favList as any[])
+    .map((f: any) => f.product)
+    .filter(Boolean)
+    .map((p: any) => catalogToProduct(p));
 
   return (
     <div className="min-h-screen bg-[#0D0D0D]">
@@ -134,12 +138,11 @@ export default function Profile() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {favorites.map((product: any, idx: number) => (
+                  {favorites.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
                       isFavorited={true}
-                      animationDelay={idx * 60}
                     />
                   ))}
                 </div>

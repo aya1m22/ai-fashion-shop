@@ -22,6 +22,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import Wardrobe from "./pages/Wardrobe";
+import Shop from "./pages/Shop";
 import { WardrobeProvider } from "./contexts/WardrobeContext";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/verify-email" component={VerifyEmail} />
+        <Route path="/shop" component={Shop} />
         <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
