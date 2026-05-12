@@ -3,7 +3,10 @@ import { useParams, Link } from "wouter";
 import { Heart, ShoppingBag, ArrowLeft, Loader2, Check, Star, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CompleteTheLook from "@/components/CompleteTheLook";
+import SizeRecommender from "@/components/SizeRecommender";
 import { useCart } from "@/contexts/CartContext";
+import { useWardrobe } from "@/contexts/WardrobeContext";
 import { toast } from "sonner";
 import { mockProducts } from "@/lib/mockProducts";
 
@@ -11,6 +14,7 @@ export default function ProductDetail() {
   const params = useParams<{ id: string }>();
   const productId = parseInt(params.id || "0");
   const { addItem } = useCart();
+  const { toggleSave, isSaved } = useWardrobe();
 
   const product = useMemo(() => {
     return mockProducts.find(p => p.id === productId);
@@ -21,11 +25,13 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
+  const saved = isSaved(productId);
+
   useEffect(() => {
     if (product) {
       document.title = `StyleAI — ${product.name}`;
-      setSelectedColor(product.colors[0]);
-      setSelectedSize(product.sizes[0]);
+      setSelectedColor(product.color);
+      setSelectedSize(product.sizes[Math.floor(product.sizes.length / 2)]);
     }
   }, [product]);
 
@@ -58,24 +64,20 @@ export default function ProductDetail() {
 
       <main className="container mx-auto px-4 py-12">
         {/* Navigation */}
-        <div className="mb-12">
+        <div className="mb-12 flex justify-between items-center">
           <Link href={product.gender === 'women' ? '/women' : '/men'} className="inline-flex items-center gap-2 text-[#666] hover:text-[#C9A84C] transition-colors uppercase tracking-[0.2em] text-[10px] font-bold">
             <ArrowLeft className="w-4 h-4" /> Back to {product.gender === 'women' ? "Women's" : "Men's"} Collection
           </Link>
+          <div className="flex gap-4">
+             <SizeRecommender product={product} onSelectSize={(size) => setSelectedSize(size)} />
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-16">
+        <div className="grid lg:grid-cols-2 gap-16 mb-24">
           {/* Image Gallery */}
           <div className="space-y-4">
-            <div className="aspect-[3/4] bg-[#111] border border-[#2A2A2A] overflow-hidden">
-              <img src={product.imageUrl} className="w-full h-full object-cover" alt={product.name} />
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square bg-[#111] border border-[#2A2A2A] opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
-                  <img src={product.imageUrl} className="w-full h-full object-cover" alt={`${product.name} view ${i}`} />
-                </div>
-              ))}
+            <div className="aspect-[3/4] bg-[#111] border border-[#2A2A2A] overflow-hidden group">
+              <img src={product.imageUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt={product.name} />
             </div>
           </div>
 
@@ -92,7 +94,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <h1 className="text-5xl font-serif font-bold mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
+            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 leading-tight" style={{ fontFamily: '"Playfair Display", serif' }}>
               {product.name}
             </h1>
             
@@ -108,27 +110,6 @@ export default function ProductDetail() {
             </p>
 
             <div className="space-y-10 border-t border-[#2A2A2A] pt-10">
-              {/* Color Selection */}
-              <div>
-                <h4 className="text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Select Color</h4>
-                <div className="flex gap-4">
-                  {product.colors.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`w-10 h-10 border transition-all flex items-center justify-center ${
-                        selectedColor === color ? 'border-[#C9A84C] p-1' : 'border-[#2A2A2A] p-0.5 hover:border-[#444]'
-                      }`}
-                    >
-                      <div 
-                        className="w-full h-full" 
-                        style={{ backgroundColor: color.toLowerCase().includes('gold') ? '#D4AF37' : color.toLowerCase() }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Size Selection */}
               <div>
                 <div className="flex justify-between mb-4">
@@ -169,13 +150,16 @@ export default function ProductDetail() {
                     </>
                   )}
                 </button>
-                <button className="w-14 h-14 border border-[#2A2A2A] flex items-center justify-center hover:border-[#C9A84C] group transition-all">
-                  <Heart className="w-5 h-5 text-[#666] group-hover:text-[#C9A84C] transition-colors" />
+                <button 
+                  onClick={() => toggleSave(product)}
+                  className={`w-14 h-14 border border-[#2A2A2A] flex items-center justify-center hover:border-[#C9A84C] group transition-all ${saved ? 'bg-[#C9A84C] border-[#C9A84C] text-black' : ''}`}
+                >
+                  <Heart className={`w-5 h-5 ${saved ? 'fill-current' : 'text-[#666] group-hover:text-[#C9A84C]'}`} />
                 </button>
               </div>
 
               {/* Guarantees */}
-              <div className="flex gap-8 pt-8 text-[9px] uppercase tracking-widest text-[#444] font-bold border-t border-[#2A2A2A]">
+              <div className="flex flex-wrap gap-8 pt-8 text-[9px] uppercase tracking-widest text-[#444] font-bold border-t border-[#2A2A2A]">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-green-800" />
                   Secure Transaction
@@ -186,6 +170,9 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+
+        {/* Complete the Look Section */}
+        <CompleteTheLook currentProduct={product} />
       </main>
 
       <Footer />

@@ -1,8 +1,10 @@
+import React from "react";
 import { Link } from "wouter";
-import { Heart, ShoppingBag, Star } from "lucide-react";
-import { useState } from "react";
+import { Heart, ShoppingBag, Star, Sparkles } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useWardrobe } from "@/contexts/WardrobeContext";
 import { Product } from "@/lib/mockProducts";
+import { Button } from "@/components/ui/button";
 
 interface ProductCardProps {
   product: Product;
@@ -10,94 +12,87 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const { toggleSave, isSaved } = useWardrobe();
+  const saved = isSaved(product.id);
 
-  const price = parseFloat(String(product.price)).toFixed(2);
-  const oldPrice = product.oldPrice ? parseFloat(String(product.oldPrice)).toFixed(2) : null;
+  const price = parseFloat(product.price).toFixed(2);
+  const oldPrice = product.oldPrice ? parseFloat(product.oldPrice).toFixed(2) : null;
 
   return (
-    <div
-      className="product-card bg-[#111] border border-[#2A2A2A] overflow-hidden transition-all duration-300 hover:border-[#C9A84C] flex flex-col h-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/product/${product.id}`} className="block relative h-[260px] overflow-hidden bg-[#1A1A1A]">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className={`w-full h-full object-cover transition-transform duration-700 ${
-            imgLoaded ? "opacity-100" : "opacity-0"
-          } ${isHovered ? "scale-105" : "scale-100"}`}
-          onLoad={() => setImgLoaded(true)}
-          loading="lazy"
-        />
-        
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {product.isNew && (
-            <span className="bg-[#C9A84C] text-black text-[9px] font-bold uppercase tracking-widest px-2 py-1">
-              New Arrival
-            </span>
-          )}
-          {product.isSale && (
-            <span className="bg-red-600 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1">
-              Sale
-            </span>
-          )}
-          <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 border ${
-            product.stockStatus === 'Low Stock' 
-              ? 'border-orange-500 text-orange-500 bg-black/40' 
-              : 'border-[#2A2A2A] text-[#A0A0A0] bg-black/40'
-          }`}>
-            {product.stockStatus}
+    <div className="group bg-[#111] border border-[#2A2A2A] overflow-hidden transition-all duration-500 hover:border-[#C9A84C]/30 flex flex-col h-full relative">
+      {/* Badges */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        {product.isNew && (
+          <span className="bg-[#C9A84C] text-black text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 shadow-lg">
+            New Arrival
           </span>
-        </div>
+        )}
+        {product.isSale && (
+          <span className="bg-white text-black text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 shadow-lg">
+            Limited Sale
+          </span>
+        )}
+        {product.stock === "low stock" && (
+          <span className="bg-red-900 text-white text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 shadow-lg">
+            Low Stock
+          </span>
+        )}
+      </div>
 
-        {/* Favorite Overlay (Optional but nice) */}
-        <button className="absolute top-3 right-3 p-2 text-white/40 hover:text-[#C9A84C] transition-colors">
-          <Heart className="w-4 h-4" />
-        </button>
+      {/* Save Button */}
+      <button 
+        onClick={() => toggleSave(product)}
+        className={`absolute top-4 right-4 z-20 p-2.5 rounded-full transition-all duration-300 ${
+          saved ? 'bg-[#C9A84C] text-black shadow-[0_0_15px_rgba(201,168,76,0.4)]' : 'bg-black/40 text-white hover:bg-[#C9A84C] hover:text-black'
+        }`}
+      >
+        <Heart className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+      </button>
+
+      {/* Image Container */}
+      <Link href={`/product/${product.id}`}>
+        <div className="relative h-[320px] overflow-hidden cursor-pointer">
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+            <div className="w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+               <div className="flex items-center gap-1 text-[#C9A84C] mb-2">
+                  <Star className="w-3 h-3 fill-current" />
+                  <span className="text-[10px] font-bold">{product.rating}</span>
+                  <span className="text-white/40 text-[9px] ml-1">({product.reviews} reviews)</span>
+               </div>
+               <p className="text-white/70 text-[10px] uppercase tracking-widest line-clamp-2 italic mb-2">
+                  "{product.description.split('.')[0]}..."
+               </p>
+            </div>
+          </div>
+        </div>
       </Link>
 
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="flex items-center gap-1 mb-2">
-          <div className="flex items-center text-[#C9A84C]">
-            <Star className="w-3 h-3 fill-current" />
-            <span className="text-[10px] font-bold ml-1">{product.rating}</span>
+      {/* Content */}
+      <div className="p-6 flex flex-col flex-1 bg-[#111]">
+        <div className="mb-4 flex-1">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5F0EB] mb-2 group-hover:text-[#C9A84C] transition-colors">
+            {product.name}
+          </h3>
+          <div className="flex items-baseline gap-3">
+            <span className="text-[#C9A84C] font-bold text-sm">${price}</span>
+            {oldPrice && (
+              <span className="text-[#444] line-through text-xs">${oldPrice}</span>
+            )}
           </div>
-          <span className="text-[10px] text-[#666]">({product.reviews} reviews)</span>
         </div>
 
-        <h3 className="text-[#F5F0EB] text-[15px] font-bold mb-1 truncate">
-          {product.name}
-        </h3>
-        
-        <p className="text-[#666] text-[12px] mb-3 line-clamp-2 leading-tight">
-          {product.description}
-        </p>
-        
-        <div className="mt-auto mb-4 flex items-baseline gap-2">
-          <span className="text-[#C9A84C] text-[17px] font-bold">
-            ${price}
-          </span>
-          {oldPrice && (
-            <span className="text-[#444] text-[13px] line-through">
-              ${oldPrice}
-            </span>
-          )}
-        </div>
-
-        <button 
-          onClick={(e) => {
-            e.preventDefault();
-            addItem(product, 1, product.sizes[0], product.colors[0]);
-          }}
-          className="w-full py-3 bg-[#1A1A1A] text-[#F5F0EB] text-[10px] font-bold uppercase tracking-widest border border-[#2A2A2A] hover:bg-[#C9A84C] hover:text-black hover:border-[#C9A84C] transition-all flex items-center justify-center gap-2"
+        {/* Action Button */}
+        <Button
+          onClick={() => addItem(product, 1, product.sizes[0], product.colors[0])}
+          className="w-full h-12 bg-transparent border border-[#2A2A2A] text-[#A0A0A0] hover:border-[#C9A84C] hover:text-[#C9A84C] rounded-none uppercase tracking-[0.2em] font-bold text-[9px] transition-all"
         >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          Add to Cart
-        </button>
+          <ShoppingBag className="w-3.5 h-3.5 mr-2" /> Add to Collection
+        </Button>
       </div>
     </div>
   );

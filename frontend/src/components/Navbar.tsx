@@ -13,6 +13,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/women", label: "Women" },
     { href: "/men", label: "Men" },
+    { href: "/wardrobe", label: "Wardrobe" },
     { href: "/ai-stylist", label: "AI Stylist", icon: <Sparkles className="w-3.5 h-3.5" /> },
   ];
 
@@ -72,7 +73,7 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link href="/profile" className="p-2 text-[#A0A0A0] hover:text-[#F5F0EB] transition">
+                <Link href="/wardrobe" className="p-2 text-[#A0A0A0] hover:text-[#F5F0EB] transition">
                   <Heart className="w-5 h-5" />
                 </Link>
                 <Link href="/profile" className="flex items-center gap-2 px-3 py-1.5 border border-[#2A2A2A] text-[10px] uppercase tracking-widest font-bold text-[#F5F0EB] hover:border-[#C9A84C] transition">

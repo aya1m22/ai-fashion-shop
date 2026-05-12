@@ -21,6 +21,8 @@ import { CartProvider } from "./contexts/CartContext";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
+import Wardrobe from "./pages/Wardrobe";
+import { WardrobeProvider } from "./contexts/WardrobeContext";
 
 function Router() {
   // Use Vite's base path (e.g., /ai-fashion-shop/) for routing
@@ -40,6 +42,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/verify-email" component={VerifyEmail} />
+        <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -94,12 +97,14 @@ function App() {
         <ErrorBoundary>
           <ThemeProvider defaultTheme="light">
             <CartProvider>
-              <AuthProvider>
-                <TooltipProvider>
-                  <Toaster position="bottom-right" />
-                  <Router />
-                </TooltipProvider>
-              </AuthProvider>
+              <WardrobeProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster position="bottom-right" />
+                    <Router />
+                  </TooltipProvider>
+                </AuthProvider>
+              </WardrobeProvider>
             </CartProvider>
           </ThemeProvider>
         </ErrorBoundary>

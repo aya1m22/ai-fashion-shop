@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import TodaysPick from '../components/TodaysPick';
+import SurpriseMe from '../components/SurpriseMe';
+import StyleQuiz from '../components/StyleQuiz';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight, TrendingUp } from 'lucide-react';
@@ -8,11 +11,12 @@ import ProductCard from '../components/ProductCard';
 import { mockProducts } from '@/lib/mockProducts';
 
 const Home: React.FC = () => {
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+
   React.useEffect(() => {
     document.title = "StyleAI — Luxury AI-Curated Fashion";
   }, []);
 
-  // Use mock products directly for the trending section in demo mode
   const trendingProducts = React.useMemo(() => {
     return mockProducts.slice(0, 4);
   }, []);
@@ -49,28 +53,39 @@ const Home: React.FC = () => {
           <p className="text-lg md:text-xl text-[#F5F0EB]/80 mb-10 max-w-xl animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-200">
             AI-curated fashion. Personally yours. Discover a new era of style tailored to your unique essence.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
-            <Link href="/women">
-              <Button className="bg-[#C9A84C] hover:bg-[#B0923D] text-black font-bold px-10 py-7 rounded-none uppercase tracking-widest text-xs transition-all h-14">
-                Shop Women
-              </Button>
-            </Link>
-            <Link href="/men">
-              <Button variant="outline" className="border-[#F5F0EB] text-[#F5F0EB] hover:bg-[#F5F0EB] hover:text-black font-bold px-10 py-7 rounded-none uppercase tracking-widest text-xs transition-all h-14">
-                Shop Men
-              </Button>
-            </Link>
+          <div className="flex flex-col sm:flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+            <Button 
+              onClick={() => setIsQuizOpen(true)}
+              className="bg-[#C9A84C] hover:bg-[#B0923D] text-black font-bold px-10 py-7 rounded-none uppercase tracking-[0.2em] text-xs transition-all h-14 shadow-[0_0_25px_rgba(201,168,76,0.5)] animate-pulse"
+            >
+              Find My Style ✨
+            </Button>
+            <div className="flex gap-4">
+              <Link href="/women">
+                <Button variant="outline" className="border-[#F5F0EB] text-[#F5F0EB] hover:bg-[#F5F0EB] hover:text-black font-bold px-8 py-7 rounded-none uppercase tracking-widest text-[10px] transition-all h-14">
+                  Shop Women
+                </Button>
+              </Link>
+              <Link href="/men">
+                <Button variant="outline" className="border-[#F5F0EB] text-[#F5F0EB] hover:bg-[#F5F0EB] hover:text-black font-bold px-8 py-7 rounded-none uppercase tracking-widest text-[10px] transition-all h-14">
+                  Shop Men
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Today's Pick Section */}
+      <TodaysPick />
+
       {/* Categories Strip */}
-      <section className="py-12 border-b border-[#2A2A2A] bg-[#111]">
+      <section className="py-12 border-b border-[#2A2A2A] bg-[#0D0D0D]">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center gap-4">
             {categories.map((cat) => (
               <Link key={cat.name} href={cat.href}>
-                <button className="px-8 py-3 rounded-none border border-[#333] text-[10px] uppercase tracking-widest font-bold text-[#A0A0A0] hover:border-[#C9A84C] hover:text-[#C9A84C] transition-all">
+                <button className="px-8 py-3 rounded-none border border-[#2A2A2A] text-[10px] uppercase tracking-widest font-bold text-[#666] hover:border-[#C9A84C] hover:text-[#C9A84C] transition-all">
                   {cat.name}
                 </button>
               </Link>
@@ -102,7 +117,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* AI Stylist Banner */}
-      <section className="bg-[#1A1A1A] py-32 relative overflow-hidden">
+      <section className="bg-[#111] py-32 relative overflow-hidden border-y border-[#2A2A2A]">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#C9A84C] opacity-[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="container mx-auto px-4 text-center relative z-10">
           <Sparkles className="w-12 h-12 text-[#C9A84C] mx-auto mb-8 animate-pulse" />
@@ -121,6 +136,12 @@ const Home: React.FC = () => {
       </section>
 
       <Footer />
+      
+      {/* Surprise Me Floating Button */}
+      <SurpriseMe />
+
+      {/* Style Quiz Overlay */}
+      <StyleQuiz isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} />
     </div>
   );
 };
