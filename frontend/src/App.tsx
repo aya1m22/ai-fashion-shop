@@ -23,6 +23,7 @@ import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import Wardrobe from "./pages/Wardrobe";
 import Shop from "./pages/Shop";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import { WardrobeProvider } from "./contexts/WardrobeContext";
 
 function Router() {
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/verify-email" component={VerifyEmail} />
         <Route path="/shop" component={Shop} />
         <Route path="/wardrobe" component={Wardrobe} />
+        <Route path="/checkout/success" component={CheckoutSuccess} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

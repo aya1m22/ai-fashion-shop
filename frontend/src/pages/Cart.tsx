@@ -1,15 +1,23 @@
-import { Link, useLocation } from "wouter";
-import { ShoppingBag, ArrowLeft, Trash2, Plus, Minus, CreditCard, CheckCircle2, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { ShoppingBag, ArrowLeft, Trash2, Plus, Minus, CreditCard, Loader2, Lock, MapPin, User, Mail } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
+const APP_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function Cart() {
-  const { cartItems, removeItem, updateQuantity, subtotal, clearCart } = useCart();
-  const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout" | "success">("cart");
-  const [isPlacing, setIsPlacing] = useState(false);
+  const { cartItems, removeItem, updateQuantity, subtotal } = useCart();
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout">("cart");
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
 
   useState(() => {
     document.title = "StyleAI — Your Cart";
@@ -18,33 +26,46 @@ export default function Cart() {
   const shipping = cartItems.length > 0 ? 5.99 : 0;
   const total = subtotal + shipping;
 
-  if (checkoutStep === "success") {
-    return (
-      <div className="min-h-screen bg-[#0D0D0D] text-[#F5F0EB]">
-        <Navbar />
-        <div className="container py-32 flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-[#C9A84C]/20 rounded-full flex items-center justify-center mb-8 border border-[#C9A84C]/50 animate-bounce">
-            <CheckCircle2 className="w-10 h-10 text-[#C9A84C]" />
-          </div>
-          <h1 className="font-serif text-5xl font-bold mb-6" style={{ fontFamily: '"Playfair Display", serif' }}>Order placed! 🎉</h1>
-          <p className="text-[#A0A0A0] text-xl max-w-lg mb-12">
-            Thank you for shopping with StyleAI. A confirmation will be sent to your email.
-          </p>
-          <Link href="/">
-            <Button className="bg-[#C9A84C] hover:bg-[#B0923D] text-black px-12 py-7 rounded-none uppercase tracking-widest font-bold text-xs">
-              Continue Shopping
-            </Button>
-          </Link>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  const handleStripeCheckout = async () => {
+    if (!name.trim()) { toast.error("Please enter your full name."); return; }
+    if (!email.trim() || !email.includes("@")) { toast.error("Please enter a valid email address."); return; }
+    if (!address.trim()) { toast.error("Please enter your shipping address."); return; }
+
+    setIsRedirecting(true);
+    try {
+      const origin = window.location.origin;
+      const successUrl = `${origin}${APP_BASE}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${origin}${APP_BASE}/cart`;
+
+      const res = await fetch(`${API_BASE}/api/stripe/create-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: cartItems.map((item) => ({
+            name: `${item.product.name} (${item.size} / ${item.color})`,
+            price: item.product.price,
+            quantity: item.quantity,
+            imageUrl: item.product.imageUrl,
+          })),
+          customer: { name, email, address },
+          successUrl,
+          cancelUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Failed to create checkout session");
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast.error(err.message || "Could not start checkout. Is the backend running?");
+      setIsRedirecting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-[#F5F0EB]">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -58,7 +79,10 @@ export default function Cart() {
               </p>
             </div>
             {checkoutStep === "checkout" && (
-              <button onClick={() => setCheckoutStep("cart")} className="flex items-center gap-2 text-[#A0A0A0] hover:text-[#F5F0EB] transition uppercase tracking-widest text-[10px] font-bold">
+              <button
+                onClick={() => setCheckoutStep("cart")}
+                className="flex items-center gap-2 text-[#A0A0A0] hover:text-[#F5F0EB] transition uppercase tracking-widest text-[10px] font-bold"
+              >
                 <ArrowLeft className="w-4 h-4" /> Back to Cart
               </button>
             )}
@@ -67,7 +91,9 @@ export default function Cart() {
           {cartItems.length === 0 ? (
             <div className="text-center py-24 bg-[#111] border border-[#2A2A2A]">
               <ShoppingBag className="w-16 h-16 text-[#333] mx-auto mb-6" />
-              <h3 className="text-2xl font-serif mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>Your gallery is empty</h3>
+              <h3 className="text-2xl font-serif mb-4" style={{ fontFamily: '"Playfair Display", serif' }}>
+                Your gallery is empty
+              </h3>
               <Link href="/">
                 <Button className="bg-transparent border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C] hover:text-black rounded-none px-8 py-6 uppercase tracking-widest text-[10px] font-bold transition-all">
                   Browse the Collection
@@ -81,7 +107,10 @@ export default function Cart() {
                 {checkoutStep === "cart" ? (
                   <div className="space-y-6">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="bg-[#111] border border-[#2A2A2A] p-6 flex gap-6 group hover:border-[#333] transition-colors">
+                      <div
+                        key={item.id}
+                        className="bg-[#111] border border-[#2A2A2A] p-6 flex gap-6 group hover:border-[#333] transition-colors"
+                      >
                         <div className="w-24 h-32 bg-[#1A1A1A] overflow-hidden shrink-0 border border-[#2A2A2A]">
                           <img src={item.product.imageUrl} className="w-full h-full object-cover" alt={item.product.name} />
                         </div>
@@ -93,53 +122,92 @@ export default function Cart() {
                             </button>
                           </div>
                           <p className="text-[11px] text-[#A0A0A0] uppercase tracking-widest mb-6">
-                            Size: <span className="text-[#F5F0EB]">{item.size}</span> · 
+                            Size: <span className="text-[#F5F0EB]">{item.size}</span> ·{" "}
                             Color: <span className="text-[#F5F0EB]">{item.color}</span>
                           </p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1 border border-[#2A2A2A] bg-[#0D0D0D]">
-                              <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 hover:bg-[#1A1A1A] text-[#A0A0A0]">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="p-2 hover:bg-[#1A1A1A] text-[#A0A0A0]"
+                              >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
                               <span className="w-10 text-center text-xs font-bold">{item.quantity}</span>
-                              <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-2 hover:bg-[#1A1A1A] text-[#A0A0A0]">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="p-2 hover:bg-[#1A1A1A] text-[#A0A0A0]"
+                              >
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                            <span className="text-[#C9A84C] font-bold">${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</span>
+                            <span className="text-[#C9A84C] font-bold">
+                              ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}
+                            </span>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
+                  /* Checkout form */
                   <div className="bg-[#111] border border-[#2A2A2A] p-10 space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest font-bold text-[#666]">Full Name</label>
-                        <input type="text" placeholder="John Doe" className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest font-bold text-[#666]">Email Address</label>
-                        <input type="email" placeholder="john@example.com" className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-widest font-bold text-[#666]">Shipping Address</label>
-                      <input type="text" placeholder="123 Luxury Lane, Fashion District" className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all" />
-                    </div>
-                    <div className="pt-4 space-y-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CreditCard className="w-4 h-4 text-[#C9A84C]" />
-                        <span className="text-[10px] uppercase tracking-widest font-bold">Payment Method</span>
-                      </div>
-                      <div className="bg-[#0D0D0D] border border-[#2A2A2A] p-4 flex items-center gap-4">
-                        <div className="flex-1 flex gap-4">
-                          <input type="text" placeholder="XXXX XXXX XXXX XXXX" className="bg-transparent text-sm w-full outline-none" maxLength={19} />
-                          <input type="text" placeholder="MM/YY" className="bg-transparent text-sm w-16 outline-none" maxLength={5} />
-                          <input type="text" placeholder="CVC" className="bg-transparent text-sm w-12 outline-none" maxLength={3} />
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#C9A84C] mb-6 flex items-center gap-2">
+                        <User className="w-3.5 h-3.5" /> Delivery Details
+                      </p>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-[#666]">Full Name</label>
+                          <input
+                            type="text"
+                            placeholder="Aya Mansour"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase tracking-widest font-bold text-[#666] flex items-center gap-1">
+                            <Mail className="w-3 h-3" /> Email — invoice will be sent here
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all"
+                          />
                         </div>
                       </div>
+                      <div className="space-y-2 mt-6">
+                        <label className="text-[10px] uppercase tracking-widest font-bold text-[#666] flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> Shipping Address
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="123 Fashion Ave, Cairo, Egypt"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          className="w-full bg-[#0D0D0D] border border-[#2A2A2A] px-4 py-3 text-sm focus:border-[#C9A84C] outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stripe badge */}
+                    <div className="border border-[#2A2A2A] bg-[#0D0D0D] p-5 flex items-center gap-4">
+                      <CreditCard className="w-6 h-6 text-[#C9A84C] shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-[#F5F0EB]">Secure Payment via Stripe</p>
+                        <p className="text-xs text-[#666] mt-1">
+                          You'll be redirected to Stripe's encrypted checkout page. We never see your card details.
+                        </p>
+                      </div>
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg"
+                        alt="Stripe"
+                        className="h-6 ml-auto opacity-60 filter invert"
+                      />
                     </div>
                   </div>
                 )}
@@ -148,7 +216,9 @@ export default function Cart() {
               {/* Right Column: Summary */}
               <div className="lg:col-span-1">
                 <div className="bg-[#111] border border-[#2A2A2A] p-8 sticky top-28">
-                  <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#F5F0EB] mb-8 border-b border-[#2A2A2A] pb-4">Order Summary</h3>
+                  <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#F5F0EB] mb-8 border-b border-[#2A2A2A] pb-4">
+                    Order Summary
+                  </h3>
                   <div className="space-y-4 mb-8">
                     <div className="flex justify-between text-sm">
                       <span className="text-[#666]">Subtotal</span>
@@ -165,32 +235,31 @@ export default function Cart() {
                   </div>
 
                   {checkoutStep === "cart" ? (
-                    <Button 
+                    <Button
                       onClick={() => setCheckoutStep("checkout")}
                       className="w-full bg-[#C9A84C] hover:bg-[#B0923D] text-black h-14 rounded-none uppercase tracking-[0.2em] font-bold text-[11px]"
                     >
                       Checkout Securely
                     </Button>
                   ) : (
-                    <Button 
-                      disabled={isPlacing}
-                      onClick={() => {
-                        setIsPlacing(true);
-                        setTimeout(() => {
-                          clearCart();
-                          setCheckoutStep("success");
-                          setIsPlacing(false);
-                        }, 2000);
-                      }}
-                      className="w-full bg-[#C9A84C] hover:bg-[#B0923D] text-black h-14 rounded-none uppercase tracking-[0.2em] font-bold text-[11px]"
+                    <Button
+                      disabled={isRedirecting}
+                      onClick={handleStripeCheckout}
+                      className="w-full bg-[#C9A84C] hover:bg-[#B0923D] text-black h-14 rounded-none uppercase tracking-[0.2em] font-bold text-[11px] disabled:opacity-60"
                     >
-                      {isPlacing ? <Loader2 className="animate-spin" /> : "Place Order"}
+                      {isRedirecting ? (
+                        <><Loader2 className="animate-spin w-4 h-4 mr-2" /> Redirecting…</>
+                      ) : (
+                        <><Lock className="w-4 h-4 mr-2" /> Pay with Stripe</>
+                      )}
                     </Button>
                   )}
-                  
+
                   <div className="mt-6 flex items-center justify-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[9px] uppercase tracking-widest text-[#444] font-bold">Secure SSL encrypted payment</span>
+                    <span className="text-[9px] uppercase tracking-widest text-[#444] font-bold">
+                      256-bit SSL encrypted
+                    </span>
                   </div>
                 </div>
               </div>
