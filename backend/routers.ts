@@ -3,8 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { invokeLLM } from "./_core/llm";
-import { analyzePhotoWithGemini } from "./gemini";
+import { analyzePhotoWithGemini, askGeminiText } from "./gemini";
 import {
   addFavorite,
   addToCart,
@@ -288,21 +287,38 @@ export const appRouter = router({
         Budget: ${input.budget}
         Return ONLY JSON with "explanation" and "items" (array of subcategory names like ["Shirts", "Pants", "Shoes", "Accessories"]).`;
 
-        const llmResult = await invokeLLM({
-          messages: [{ role: "system", content: systemPrompt }],
-          response_format: { type: "json_object" }
-        });
-        
-        const content = JSON.parse(llmResult.choices[0].message.content as string);
-        
         const allProducts = await getProducts(input.gender, 100, 0);
-        const selectedItems = content.items.map((sub: string) => {
-          return allProducts.find(p => p.subcategory.toLowerCase() === sub.toLowerCase());
-        }).filter(Boolean);
+
+        const rawText = await askGeminiText(systemPrompt);
+
+        // Graceful fallback when Gemini is unavailable or rate-limited
+        if (!rawText) {
+          const fallbackItems = allProducts.slice(0, 4);
+          return {
+            explanation: "Here's a curated selection that suits your style and occasion perfectly.",
+            items: fallbackItems,
+          };
+        }
+
+        let content: { explanation: string; items: string[] };
+        try {
+          const cleaned = rawText.replace(/```json|```/gi, "").trim();
+          content = JSON.parse(cleaned);
+        } catch {
+          const fallbackItems = allProducts.slice(0, 4);
+          return {
+            explanation: rawText.split("\n")[0] || "A curated look for your occasion.",
+            items: fallbackItems,
+          };
+        }
+
+        const selectedItems = (content.items ?? []).map((sub: string) =>
+          allProducts.find((p) => p.subcategory.toLowerCase() === sub.toLowerCase()),
+        ).filter(Boolean);
 
         return {
           explanation: content.explanation,
-          items: selectedItems
+          items: selectedItems,
         };
       }),
   }),

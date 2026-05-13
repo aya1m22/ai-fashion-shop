@@ -1,4 +1,4 @@
-import { Stripe } from "stripe";
+import Stripe from "stripe";
 import { ENV } from "./_core/env";
 
 let _stripe: Stripe | null = null;

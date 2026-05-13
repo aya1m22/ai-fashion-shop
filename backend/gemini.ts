@@ -79,6 +79,19 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
   );
 
   if (!response.ok) {
+    if (response.status === 429) {
+      console.warn("[Gemini] Rate limit (429) — returning fallback analysis");
+      return {
+        isValid: false,
+        message: "AI analysis temporarily unavailable — rate limit reached. Please try again in a moment.",
+        detectedGender: "unknown" as const,
+        skinTone: "",
+        undertone: "neutral" as const,
+        bestColors: ["navy", "white", "grey", "black", "beige"],
+        accessoryMetal: "either" as const,
+        seasonalPalette: "Summer" as const,
+      };
+    }
     const errorText = await response.text();
     throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 300)}`);
   }
@@ -92,4 +105,34 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
   } catch {
     throw new Error(`Gemini response was not valid JSON: ${text.slice(0, 200)}`);
   }
+}
+
+/** Text-only Gemini call — used for style recommendations and quiz results. */
+export async function askGeminiText(prompt: string): Promise<string> {
+  const apiKey = ENV.geminiApiKey;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      console.warn("[Gemini] Rate limit (429) on text call — returning null");
+      return "";
+    }
+    const errorText = await response.text();
+    throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 200)}`);
+  }
+
+  const result = await response.json();
+  return result.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }

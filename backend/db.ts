@@ -3,7 +3,8 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { InsertUser, aiRecommendations, cartItems, favorites, orderItems, orders, products, reviews, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
-import { initialCatalog, catalogById, CatalogProduct } from "./catalog";
+import type { CatalogProduct } from "./catalog";
+import { initialCatalog, catalogById } from "./catalog";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let queryClient: postgres.Sql<{}> | null = null;

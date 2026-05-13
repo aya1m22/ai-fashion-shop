@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import * as nodemailer from "nodemailer";
 import { ENV } from "./_core/env";
 
 interface InvoiceItem {

@@ -23,7 +23,11 @@ export async function askGemini(prompt: string) {
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
+      if (response.status === 429) {
+        console.warn("[Gemini] Rate limit hit — returning fallback");
+        return "Our AI stylist is taking a short break. Try again in a few seconds!";
+      }
+      const errorData = await response.json().catch(() => ({}));
       console.error("Gemini API Error Response:", errorData);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
