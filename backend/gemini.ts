@@ -46,7 +46,8 @@ If no person with visible skin is detected, return:
   "seasonalPalette": "Summer"
 }`;
 
-const VISION_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+// Try stable model first, then the newer one as fallback
+const VISION_MODELS = ["gemini-1.5-flash", "gemini-2.0-flash"];
 
 async function callGeminiVision(
   apiKey: string,
@@ -66,8 +67,8 @@ async function callGeminiVision(
             { text: ANALYSIS_PROMPT },
           ],
         }],
+        // No responseMimeType — not universally supported; we strip markdown below
         generationConfig: {
-          responseMimeType: "application/json",
           maxOutputTokens: 512,
           temperature: 0.2,
         },
@@ -112,8 +113,11 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
     }
 
     const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error("Gemini returned an empty response");
+    const raw = result.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    if (!raw) throw new Error("Gemini returned an empty response");
+
+    // Strip optional markdown code fences the model sometimes adds
+    const text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 
     try {
       return JSON.parse(text) as SkinAnalysis;
@@ -122,7 +126,6 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
     }
   }
 
-  // All models exhausted — throw so the frontend shows "try again" instead of "photo not suitable"
   if (lastError === "rate_limit") {
     throw new Error("AI analysis is temporarily busy — please wait a moment and try again.");
   }

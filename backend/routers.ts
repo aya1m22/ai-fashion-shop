@@ -203,9 +203,10 @@ export const appRouter = router({
 
         try {
           analysisData = await analyzePhotoWithGemini(input.imageUrl);
-        } catch (err) {
-          console.error("[AI Stylist] Gemini error:", err);
-          throw new Error("Failed to analyse photo. Please try again with a clear, well-lit photo showing your face.");
+        } catch (err: any) {
+          const msg = err?.message || "Unknown error";
+          console.error("[AI Stylist] Gemini error:", msg);
+          throw new Error(msg);
         }
 
         if (!analysisData.isValid) {
