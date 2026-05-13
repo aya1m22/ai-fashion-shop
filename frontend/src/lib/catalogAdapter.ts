@@ -1,4 +1,4 @@
-import type { CatalogProduct } from "../../../backend/catalog";
+import type { CatalogProduct } from "@shared/catalog";
 import type { Product } from "./mockProducts";
 
 function capitalize(s: string) {

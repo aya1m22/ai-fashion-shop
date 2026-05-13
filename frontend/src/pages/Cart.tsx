@@ -53,8 +53,10 @@ export default function Cart() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || "Failed to create checkout session");
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch { /* not JSON — leave data empty */ }
+      if (!res.ok || !data.url) throw new Error(data.error || `Server error ${res.status}`);
       window.location.href = data.url;
     } catch (err: any) {
       toast.error(err.message || "Could not start checkout. Is the backend running?");

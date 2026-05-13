@@ -9,6 +9,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useWardrobe } from "@/contexts/WardrobeContext";
 import { toast } from "sonner";
 import { mockProducts } from "@/lib/mockProducts";
+import { initialCatalog } from "@shared/catalog";
+import { catalogToProduct } from "@/lib/catalogAdapter";
 
 export default function ProductDetail() {
   const params = useParams<{ id: string }>();
@@ -17,7 +19,10 @@ export default function ProductDetail() {
   const { toggleSave, isSaved } = useWardrobe();
 
   const product = useMemo(() => {
-    return mockProducts.find(p => p.id === productId);
+    const mock = mockProducts.find(p => p.id === productId);
+    if (mock) return mock;
+    const catalogItem = initialCatalog.find(p => p.id === productId);
+    return catalogItem ? catalogToProduct(catalogItem) : undefined;
   }, [productId]);
 
   const [selectedColor, setSelectedColor] = useState<string>("");

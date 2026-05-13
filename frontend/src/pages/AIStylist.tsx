@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
   Sparkles,
   Upload,
@@ -9,6 +9,9 @@ import {
   Camera,
   AlertCircle,
   AlertTriangle,
+  Send,
+  MessageCircle,
+  RotateCcw,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -149,79 +152,124 @@ export default function AIStylist() {
   const genderMismatch = (analyzePhoto.data as any)?.genderMismatch as boolean | undefined;
   const detectedGender = (analyzePhoto.data as any)?.detectedGender as string | undefined;
 
-  // ── Occasion Advisor state ──────────────────────────────────────────────────
+  // ── Occasion Advisor chat state ─────────────────────────────────────────────
+  type ChatGender = "women" | "men";
+  type ChatMsg =
+    | { role: "assistant"; text: string; products?: Product[] }
+    | { role: "user"; text: string };
+
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
+    {
+      role: "assistant",
+      text: "Hi! I'm Aya, your personal stylist 👗 Are you shopping for women's or men's fashion today?",
+    },
+  ]);
+  const [chatGender, setChatGender] = useState<ChatGender | null>(null);
   const [chatInput, setChatInput] = useState("");
-  const [chatResults, setChatResults] = useState<{
-    products: Product[];
-    occasion: string;
-    tip: string;
-  } | null>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const { data: allProducts } = trpc.products.list.useQuery({ limit: 200 });
   const allAdapted = useMemo(
     () => (allProducts ?? []).map(catalogToProduct),
     [allProducts],
   );
-  const catalogForChat = allAdapted.length > 0 ? allAdapted : mockProducts;
 
-  const handleChatSearch = async () => {
-    const input = chatInput.toLowerCase();
-    const occasion = OCCASION_KEYWORDS.find((k) => input.includes(k));
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
-    if (!occasion) {
-      toast.info("I'm Aya, your stylist. Try mentioning an occasion like 'wedding', 'interview', or 'date'!");
-      return;
-    }
+  const appendMsg = (msg: ChatMsg) =>
+    setChatMessages(prev => [...prev, msg]);
 
+  const handleGenderSelect = (g: ChatGender) => {
+    setChatGender(g);
+    appendMsg({ role: "user", text: g === "women" ? "Women's fashion" : "Men's fashion" });
+    setTimeout(() => {
+      appendMsg({
+        role: "assistant",
+        text: `Great! What's the occasion? Tell me where you're going — a wedding, date night, job interview, beach trip, party... or anything else!`,
+      });
+    }, 300);
+  };
+
+  const handleChatSend = async () => {
+    const text = chatInput.trim();
+    if (!text || isChatLoading) return;
+    setChatInput("");
+    appendMsg({ role: "user", text });
     setIsChatLoading(true);
+
+    const catalog = allAdapted.length > 0
+      ? allAdapted.filter(p => !chatGender || p.gender === chatGender)
+      : mockProducts.filter(p => !chatGender || p.gender === chatGender);
+
+    const sample = catalog.slice(0, 50);
+
     try {
-      const prompt = `User needs an outfit for ${occasion}.
-From this catalog: ${JSON.stringify(catalogForChat.slice(0, 30))},
-return the IDs of the best 3 products for this occasion.
-Return ONLY a JSON array of IDs like [1001, 1002, 1003].`;
+      const historyCtx = chatMessages
+        .slice(-6)
+        .map(m => `${m.role === "assistant" ? "Aya" : "User"}: ${m.text}`)
+        .join("\n");
 
-      const response = await askGemini(prompt);
+      const prompt = `You are Aya, a luxury personal fashion stylist. You are helping a customer find an outfit.
+Gender preference: ${chatGender ?? "any"}.
+Conversation so far:
+${historyCtx}
+User just said: "${text}"
 
-      if (typeof response === "string" && response.includes("API key missing")) {
-        throw new Error("KEY_MISSING");
+Available catalog (use ONLY these IDs):
+${JSON.stringify(sample.map(p => ({ id: p.id, name: p.name, subcategory: p.subcategory, price: p.price, color: p.color })))}
+
+Reply with a warm, expert 1-2 sentence styling tip, then recommend 3 products from the catalog.
+Return ONLY valid JSON with:
+{
+  "reply": "your conversational message",
+  "productIds": [id1, id2, id3],
+  "tip": "one expert pro-tip for this occasion"
+}`;
+
+      const raw = await askGemini(prompt);
+
+      if (typeof raw === "string" && (raw.includes("API key missing") || raw.includes("taking a short break"))) {
+        throw new Error("AI_UNAVAILABLE");
       }
 
-      const ids = parseGeminiJson(response);
-      const products = catalogForChat.filter((p) => ids.includes(p.id));
+      const parsed = parseGeminiJson(raw);
+      const products = catalog.filter(p => (parsed.productIds as number[]).includes(p.id));
+      const finalProducts = products.length > 0 ? products : catalog.slice(0, 3);
 
-      if (products.length === 0) throw new Error("NO_MATCHES");
-
-      setChatResults({
-        products,
-        occasion,
-        tip: OCCASION_TIPS[occasion] || "Dress to express your unique essence. Confidence is your best accessory.",
-      });
-      setChatInput("");
-    } catch {
-      const fallbackProducts = catalogForChat
-        .filter(
-          (p) =>
-            p.name.toLowerCase().includes(occasion) ||
-            p.description.toLowerCase().includes(occasion) ||
-            p.subcategory.toLowerCase().includes(occasion),
-        )
-        .slice(0, 3);
-
-      const finalProducts =
-        fallbackProducts.length > 0
-          ? fallbackProducts
-          : catalogForChat.sort(() => 0.5 - Math.random()).slice(0, 3);
-
-      setChatResults({
+      appendMsg({
+        role: "assistant",
+        text: parsed.reply || "Here are my top picks for you!",
         products: finalProducts,
-        occasion,
-        tip: OCCASION_TIPS[occasion] || "A timeless choice for any occasion. Elegance is the only beauty that never fades.",
       });
-      setChatInput("");
+    } catch {
+      const occasion = OCCASION_KEYWORDS.find(k => text.toLowerCase().includes(k));
+      const fallback = occasion
+        ? catalog.filter(p =>
+            p.name.toLowerCase().includes(occasion) ||
+            p.description.toLowerCase().includes(occasion)
+          ).slice(0, 3)
+        : catalog.slice(0, 3);
+      const finalFallback = fallback.length > 0 ? fallback : catalog.slice(0, 3);
+      appendMsg({
+        role: "assistant",
+        text: `Here's what I'd recommend for that occasion — these are some of my favourite picks from our collection!`,
+        products: finalFallback,
+      });
     } finally {
       setIsChatLoading(false);
     }
+  };
+
+  const resetChat = () => {
+    setChatMessages([{
+      role: "assistant",
+      text: "Hi! I'm Aya, your personal stylist 👗 Are you shopping for women's or men's fashion today?",
+    }]);
+    setChatGender(null);
+    setChatInput("");
   };
 
   return (
@@ -493,73 +541,111 @@ Return ONLY a JSON array of IDs like [1001, 1002, 1003].`;
           {/* Divider */}
           <div className="border-t border-[#2A2A2A] mb-20" />
 
-          {/* ── SECTION 2: Occasion Advisor ─────────────────────────────────── */}
+          {/* ── SECTION 2: Occasion Advisor Chat ────────────────────────────── */}
           <section>
-            <div className="flex items-center gap-3 mb-8">
-              <Sparkles className="w-5 h-5 text-[#C9A84C]" />
-              <h2 className="text-2xl font-serif" style={{ fontFamily: '"Playfair Display", serif' }}>
-                Occasion Advisor
-              </h2>
-            </div>
-
-            <div className="bg-[#111] border border-[#2A2A2A] p-2 flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleChatSearch()}
-                placeholder="Ask Aya: 'What should I wear to a summer wedding?' or 'Outfit for an interview'…"
-                className="flex-1 bg-transparent border-none px-6 py-4 text-sm focus:outline-none placeholder:text-[#333]"
-              />
-              <Button
-                onClick={handleChatSearch}
-                disabled={isChatLoading}
-                className="bg-[#C9A84C] text-black rounded-none h-14 px-8 uppercase tracking-widest font-bold text-xs"
-              >
-                {isChatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Consult Aya"}
-              </Button>
-            </div>
-
-            {chatResults && (
-              <div className="mt-12 space-y-12 animate-in slide-in-from-top-4 duration-500">
-                <div className="text-center">
-                  <h3 className="text-2xl font-serif italic mb-2 capitalize" style={{ fontFamily: '"Playfair Display", serif' }}>
-                    Perfect for your {chatResults.occasion}
-                  </h3>
-                  <p className="text-[#666] uppercase tracking-widest text-[9px] font-bold mb-8">
-                    Aya's Curated Recommendations
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {chatResults.products.map((p) => (
-                    <div key={p.id} className="space-y-4">
-                      <ProductCard product={p} />
-                      <Button
-                        onClick={() => addItem(p, 1, p.sizes[0], p.colors[0])}
-                        className="w-full bg-[#C9A84C] text-black h-12 rounded-none uppercase tracking-widest font-bold text-[9px]"
-                      >
-                        Add to Collection
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-[#1A1A1A] border border-[#2A2A2A] p-8 flex gap-6 items-start">
-                  <div className="p-3 bg-[#C9A84C]/10 rounded-full border border-[#C9A84C]/20">
-                    <Info className="w-5 h-5 text-[#C9A84C]" />
-                  </div>
-                  <div>
-                    <h4 className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#C9A84C] mb-2">
-                      Stylist Pro Tip
-                    </h4>
-                    <p className="text-sm text-[#A0A0A0] leading-relaxed italic">
-                      "{chatResults.tip}"
-                    </p>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="w-5 h-5 text-[#C9A84C]" />
+                <h2 className="text-2xl font-serif" style={{ fontFamily: '"Playfair Display", serif' }}>
+                  Chat with Aya
+                </h2>
               </div>
-            )}
+              <button
+                onClick={resetChat}
+                className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-[#444] hover:text-[#C9A84C] font-bold transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" /> New chat
+              </button>
+            </div>
+
+            {/* Chat messages */}
+            <div className="bg-[#0D0D0D] border border-[#2A2A2A] flex flex-col" style={{ minHeight: "420px", maxHeight: "600px", overflowY: "auto" }}>
+              <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[80%] ${msg.role === "user" ? "order-2" : ""}`}>
+                      {msg.role === "assistant" && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 rounded-full bg-[#C9A84C] flex items-center justify-center text-black text-[9px] font-bold">A</div>
+                          <span className="text-[9px] uppercase tracking-widest text-[#C9A84C] font-bold">Aya</span>
+                        </div>
+                      )}
+                      <div className={`px-5 py-3 text-sm leading-relaxed ${
+                        msg.role === "user"
+                          ? "bg-[#C9A84C] text-black font-medium"
+                          : "bg-[#1A1A1A] border border-[#2A2A2A] text-[#F5F0EB]"
+                      }`}>
+                        {msg.text}
+                      </div>
+
+                      {/* Gender quick-reply */}
+                      {i === 0 && !chatGender && (
+                        <div className="flex gap-3 mt-3">
+                          {(["women", "men"] as const).map(g => (
+                            <button
+                              key={g}
+                              onClick={() => handleGenderSelect(g)}
+                              className="flex-1 py-2.5 border border-[#2A2A2A] text-[#A0A0A0] uppercase tracking-[0.2em] text-[9px] font-bold hover:border-[#C9A84C] hover:text-[#C9A84C] transition-all"
+                            >
+                              {g === "women" ? "Women's" : "Men's"}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Product recommendations inline */}
+                      {msg.role === "assistant" && msg.products && msg.products.length > 0 && (
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {msg.products.map(p => (
+                            <div key={p.id} className="space-y-2">
+                              <ProductCard product={p} />
+                              <Button
+                                onClick={() => addItem(p, 1, p.sizes[0], p.colors[0])}
+                                className="w-full bg-[#C9A84C] text-black h-10 rounded-none uppercase tracking-widest font-bold text-[9px]"
+                              >
+                                Add to Cart
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-[#1A1A1A] border border-[#2A2A2A] px-5 py-3 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#C9A84C]" />
+                      <span className="text-[#666] text-sm italic">Aya is thinking…</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Input bar */}
+              {chatGender && (
+                <div className="border-t border-[#2A2A2A] p-3 flex gap-2 bg-[#111]">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleChatSend()}
+                    placeholder="Tell Aya your occasion or ask a follow-up…"
+                    className="flex-1 bg-transparent border-none px-4 py-3 text-sm focus:outline-none placeholder:text-[#333] text-[#F5F0EB]"
+                    disabled={isChatLoading}
+                  />
+                  <Button
+                    onClick={handleChatSend}
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="bg-[#C9A84C] text-black rounded-none h-12 w-12 p-0 shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </div>
