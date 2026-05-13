@@ -46,8 +46,13 @@ If no person with visible skin is detected, return:
   "seasonalPalette": "Summer"
 }`;
 
-// Try stable model first, then the newer one as fallback
-const VISION_MODELS = ["gemini-1.5-flash", "gemini-2.0-flash"];
+const VISION_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-flash-002",
+];
 
 async function callGeminiVision(
   apiKey: string,
@@ -107,6 +112,14 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
       continue;
     }
 
+    // 404 = model not available for this API key; try the next one
+    if (response.status === 404) {
+      const errText = await response.text();
+      console.warn(`[Gemini] ${model} not found (404) — trying next model. ${errText.slice(0, 120)}`);
+      lastError = errText;
+      continue;
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 300)}`);
@@ -129,10 +142,10 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
   if (lastError === "rate_limit") {
     throw new Error("AI analysis is temporarily busy — please wait a moment and try again.");
   }
-  throw new Error("All Gemini models failed to respond.");
+  throw new Error(`No available Gemini model found for this API key. Last error: ${lastError.slice(0, 200)}`);
 }
 
-const TEXT_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+const TEXT_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-flash-latest"];
 
 /** Text-only Gemini call — used for style recommendations and quiz results. */
 export async function askGeminiText(prompt: string): Promise<string> {
@@ -161,6 +174,11 @@ export async function askGeminiText(prompt: string): Promise<string> {
 
     if (response.status === 429) {
       console.warn(`[Gemini] Still rate-limited on ${model} (text) — trying next model`);
+      continue;
+    }
+
+    if (response.status === 404) {
+      console.warn(`[Gemini] ${model} not found (text) — trying next model`);
       continue;
     }
 
