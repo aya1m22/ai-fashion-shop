@@ -11,17 +11,14 @@ import { sendInvoiceEmail } from "../email";
 export function createApp() {
   const app = express();
 
-  const allowedOrigins = [
-    "https://aya1m22.github.io",
-    "http://localhost:3000",
-    "http://localhost:5000",
-    process.env.FRONTEND_URL,
-  ].filter(Boolean) as string[];
-
   app.use(
     cors({
       origin: (origin, cb) => {
-        if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) {
+        // Allow all localhost origins (any port) and the GitHub Pages deployment
+        const isLocalhost = !origin || /^https?:\/\/localhost(:\d+)?$/.test(origin);
+        const isGithubPages = origin?.startsWith("https://aya1m22.github.io");
+        const isFrontendUrl = process.env.FRONTEND_URL && origin?.startsWith(process.env.FRONTEND_URL);
+        if (isLocalhost || isGithubPages || isFrontendUrl) {
           cb(null, true);
         } else {
           cb(new Error(`CORS: origin ${origin} not allowed`));
