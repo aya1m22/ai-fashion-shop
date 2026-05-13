@@ -6,7 +6,7 @@ let _stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (!_stripe) {
     if (!ENV.stripeSecretKey) throw new Error("STRIPE_SECRET_KEY is not configured");
-    _stripe = new Stripe(ENV.stripeSecretKey, { apiVersion: "2025-05-28.basil" });
+    _stripe = new Stripe(ENV.stripeSecretKey, { apiVersion: "2026-04-22.dahlia" });
   }
   return _stripe;
 }
@@ -32,7 +32,7 @@ export async function createCheckoutSession(
 ): Promise<string> {
   const stripe = getStripe();
 
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => ({
+  const lineItems = items.map((item) => ({
     price_data: {
       currency: "usd",
       product_data: {

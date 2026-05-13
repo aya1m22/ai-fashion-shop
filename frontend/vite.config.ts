@@ -157,7 +157,7 @@ const __dirname = path.dirname(__filename);
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 
 export default defineConfig({
-  base: '/ai-fashion-shop/',
+  base: process.env.VITE_BASE ?? '/ai-fashion-shop/',
   plugins,
   resolve: {
     alias: {
