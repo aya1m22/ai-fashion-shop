@@ -56,7 +56,7 @@ async function callGeminiVision(
   base64Data: string,
 ): Promise<Response> {
   return fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -146,7 +146,7 @@ export async function askGeminiText(prompt: string): Promise<string> {
 
   for (const model of TEXT_MODELS) {
     let response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
       { method: "POST", headers: { "Content-Type": "application/json" }, body },
     );
 
@@ -154,7 +154,7 @@ export async function askGeminiText(prompt: string): Promise<string> {
       console.warn(`[Gemini] Rate limit on ${model} (text) — retrying in 3 s`);
       await new Promise((r) => setTimeout(r, 3000));
       response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body },
       );
     }
