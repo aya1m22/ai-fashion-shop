@@ -34,6 +34,20 @@ export function createApp() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
 
+  // Gemini: list available models (diagnostic)
+  app.get("/api/gemini/models", async (_req, res) => {
+    const key = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY ?? "";
+    if (!key) return res.status(400).json({ error: "No Gemini API key in .env" });
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+      const data = await r.json();
+      const names = (data.models ?? []).map((m: any) => m.name);
+      res.json({ status: r.status, models: names });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Stripe: create checkout session (falls back to demo mode when key is not set)
   app.post("/api/stripe/create-session", async (req, res) => {
     try {
