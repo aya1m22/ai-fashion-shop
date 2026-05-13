@@ -46,19 +46,16 @@ If no person with visible skin is detected, return:
   "seasonalPalette": "Summer"
 }`;
 
-export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<SkinAnalysis> {
-  const apiKey = ENV.geminiApiKey;
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured. Add GEMINI_API_KEY (or VITE_GEMINI_API_KEY) to .env");
-  }
+const VISION_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
 
-  const matches = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
-  if (!matches) throw new Error("Invalid image format — expected a base64 DataURL");
-  const mimeType = matches[1];
-  const base64Data = matches[2];
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+async function callGeminiVision(
+  apiKey: string,
+  model: string,
+  mimeType: string,
+  base64Data: string,
+): Promise<Response> {
+  return fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,62 +74,102 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
       }),
     },
   );
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      console.warn("[Gemini] Rate limit (429) — returning fallback analysis");
-      return {
-        isValid: false,
-        message: "AI analysis temporarily unavailable — rate limit reached. Please try again in a moment.",
-        detectedGender: "unknown" as const,
-        skinTone: "",
-        undertone: "neutral" as const,
-        bestColors: ["navy", "white", "grey", "black", "beige"],
-        accessoryMetal: "either" as const,
-        seasonalPalette: "Summer" as const,
-      };
-    }
-    const errorText = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 300)}`);
-  }
-
-  const result = await response.json();
-  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Gemini returned an empty response");
-
-  try {
-    return JSON.parse(text) as SkinAnalysis;
-  } catch {
-    throw new Error(`Gemini response was not valid JSON: ${text.slice(0, 200)}`);
-  }
 }
+
+export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<SkinAnalysis> {
+  const apiKey = ENV.geminiApiKey;
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured. Add GEMINI_API_KEY (or VITE_GEMINI_API_KEY) to .env");
+  }
+
+  const matches = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!matches) throw new Error("Invalid image format — expected a base64 DataURL");
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  let lastError = "";
+
+  for (const model of VISION_MODELS) {
+    // First attempt
+    let response = await callGeminiVision(apiKey, model, mimeType, base64Data);
+
+    // On 429, wait 3 s and retry once before trying the next model
+    if (response.status === 429) {
+      console.warn(`[Gemini] Rate limit on ${model} — retrying in 3 s`);
+      await new Promise((r) => setTimeout(r, 3000));
+      response = await callGeminiVision(apiKey, model, mimeType, base64Data);
+    }
+
+    if (response.status === 429) {
+      console.warn(`[Gemini] Still rate-limited on ${model} — trying next model`);
+      lastError = "rate_limit";
+      continue;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 300)}`);
+    }
+
+    const result = await response.json();
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Gemini returned an empty response");
+
+    try {
+      return JSON.parse(text) as SkinAnalysis;
+    } catch {
+      throw new Error(`Gemini response was not valid JSON: ${text.slice(0, 200)}`);
+    }
+  }
+
+  // All models exhausted — throw so the frontend shows "try again" instead of "photo not suitable"
+  if (lastError === "rate_limit") {
+    throw new Error("AI analysis is temporarily busy — please wait a moment and try again.");
+  }
+  throw new Error("All Gemini models failed to respond.");
+}
+
+const TEXT_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
 
 /** Text-only Gemini call — used for style recommendations and quiz results. */
 export async function askGeminiText(prompt: string): Promise<string> {
   const apiKey = ENV.geminiApiKey;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
-      }),
-    },
-  );
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+  });
 
-  if (!response.ok) {
+  for (const model of TEXT_MODELS) {
+    let response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body },
+    );
+
     if (response.status === 429) {
-      console.warn("[Gemini] Rate limit (429) on text call — returning null");
-      return "";
+      console.warn(`[Gemini] Rate limit on ${model} (text) — retrying in 3 s`);
+      await new Promise((r) => setTimeout(r, 3000));
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body },
+      );
     }
-    const errorText = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 200)}`);
+
+    if (response.status === 429) {
+      console.warn(`[Gemini] Still rate-limited on ${model} (text) — trying next model`);
+      continue;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error ${response.status}: ${errorText.slice(0, 200)}`);
+    }
+
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
   }
 
-  const result = await response.json();
-  return result.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  console.warn("[Gemini] All text models rate-limited — returning empty");
+  return "";
 }
