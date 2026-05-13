@@ -2,14 +2,12 @@ import "dotenv/config";
 import { createServer } from "http";
 import net from "net";
 import { createApp } from "./app";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./vite";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
+    server.listen(port, () => { server.close(() => resolve(true)); });
     server.on("error", () => resolve(false));
   });
 }
@@ -25,21 +23,21 @@ async function startServer() {
   const app = createApp();
   const server = createServer(app);
 
+  // Production: serve the built frontend from dist/public.
+  // Development: frontend runs as a separate Vite server on port 3000 (pnpm run frontend:dev).
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
-  } else {
-    await setupVite(app, server);
   }
 
   const preferredPort = parseInt(process.env.PORT || "5000");
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+    console.log(`Port ${preferredPort} busy, using ${port}`);
   }
 
   server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+    console.log(`Backend running on http://localhost:${port}/`);
   });
 }
 

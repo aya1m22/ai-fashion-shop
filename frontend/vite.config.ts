@@ -203,6 +203,13 @@ export default defineConfig({
       "/api/trpc": {
         target: "http://localhost:5000",
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("error", (err) => console.error("[proxy] /api/trpc error:", err.message));
+        },
+      },
+      "/api/stripe": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
       },
     },
   },

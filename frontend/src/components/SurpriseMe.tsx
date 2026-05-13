@@ -14,8 +14,17 @@ const ALL_PRODUCTS: Product[] = [
   ...initialCatalog.map(catalogToProduct),
 ];
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function getByGender(gender: Gender): Product[] {
-  return ALL_PRODUCTS.filter(p => p.gender === gender);
+  return shuffle(ALL_PRODUCTS.filter(p => p.gender === gender));
 }
 
 export default function SurpriseMe() {
@@ -39,13 +48,16 @@ export default function SurpriseMe() {
     setIsLoading(true);
     const pool = getByGender(selectedGender);
     try {
-      const sample = pool.slice(0, 40);
-      const prompt = `You are a fashion stylist. Pick a complete ${selectedGender}'s outfit from this catalog: ${JSON.stringify(sample.map(p => ({ id: p.id, name: p.name, subcategory: p.subcategory, color: p.color })))}.
-A complete outfit is 2-3 items that work together (e.g. top + bottom, or dress + outer layer).
-Return ONLY a JSON object with:
-- itemIds: Array of product IDs from the catalog above
-- story: 2-sentence style story about why this combination works starting with "The [product1] paired with..."
-Return ONLY valid JSON, no markdown.`;
+      const sample = pool.slice(0, 30);
+      const catalogJson = JSON.stringify(sample.map(p => ({ id: p.id, name: p.name, subcategory: p.subcategory, color: p.color })));
+      const prompt = `You are a fashion stylist. Pick a complete ${selectedGender}'s outfit from this catalog.
+Catalog: ${catalogJson}
+Rules:
+- Pick 2-3 items that work together (top + bottom, or dress + layer)
+- Items must be from the catalog above — use EXACT IDs
+- Make the combination stylish and intentional
+Return ONLY valid JSON (no markdown):
+{"itemIds":[<id1>,<id2>],"story":"The [item1] paired with [item2] creates a look that..."}`;
 
       const response = await askGemini(prompt);
       const data = parseGeminiJson(response);
