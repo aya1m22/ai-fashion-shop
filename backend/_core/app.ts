@@ -37,7 +37,7 @@ export function createApp() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
 
-  // Stripe: create checkout session
+  // Stripe: create checkout session (falls back to demo mode when key is not set)
   app.post("/api/stripe/create-session", async (req, res) => {
     try {
       const { items, customer, successUrl, cancelUrl } = req.body as {
@@ -46,6 +46,14 @@ export function createApp() {
         successUrl: string;
         cancelUrl: string;
       };
+
+      if (!process.env.STRIPE_SECRET_KEY) {
+        // Demo mode: skip Stripe and redirect straight to the success page
+        const demoId = `demo_${Date.now()}`;
+        const demoUrl = successUrl.replace("{CHECKOUT_SESSION_ID}", demoId);
+        return res.json({ url: demoUrl, demo: true });
+      }
+
       const url = await createCheckoutSession(items, customer, successUrl, cancelUrl);
       res.json({ url });
     } catch (err: any) {
@@ -58,6 +66,19 @@ export function createApp() {
   app.post("/api/stripe/verify-session", async (req, res) => {
     try {
       const { sessionId } = req.body as { sessionId: string };
+
+      // Demo mode: return a fake successful order
+      if (sessionId.startsWith("demo_")) {
+        return res.json({
+          success: true,
+          orderNumber: sessionId.slice(-8).toUpperCase(),
+          customerEmail: "demo@styleai.com",
+          total: 0,
+          items: [],
+          isDemo: true,
+        });
+      }
+
       const session = await retrieveSession(sessionId);
 
       if (session.payment_status !== "paid") {

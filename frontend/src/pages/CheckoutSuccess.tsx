@@ -77,11 +77,14 @@ export default function CheckoutSuccess() {
               Order <span className="text-[#C9A84C] font-bold">#{order.orderNumber}</span>
             </p>
 
-            {/* Invoice sent note */}
+            {/* Invoice / demo note */}
             <div className="flex items-center gap-3 bg-[#111] border border-[#C9A84C]/30 px-6 py-4 mb-10 mt-4">
               <Mail className="w-5 h-5 text-[#C9A84C] shrink-0" />
               <p className="text-sm text-[#A0A0A0] text-left">
-                Invoice sent to <span className="text-[#F5F0EB] font-bold">{order.customerEmail}</span>
+                {(order as any).isDemo
+                  ? <span className="text-[#C9A84C]">Demo order — no payment was charged. Add <strong>STRIPE_SECRET_KEY</strong> to .env for real payments.</span>
+                  : <>Invoice sent to <span className="text-[#F5F0EB] font-bold">{order.customerEmail}</span></>
+                }
               </p>
             </div>
 
