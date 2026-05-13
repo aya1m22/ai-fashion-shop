@@ -1,6 +1,6 @@
 [build]
   # Build the React frontend; the Netlify function is bundled automatically
-  command = "npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm run build:frontend"
+  command = "corepack prepare pnpm@10 --activate && pnpm install --frozen-lockfile && pnpm run build:frontend"
   publish = "dist/public"
   functions = "netlify/functions"
 
