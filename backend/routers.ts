@@ -264,7 +264,10 @@ export const appRouter = router({
           recommendedProducts = allProducts.slice(0, input.gender === "men" ? 8 : 9);
         }
 
-        await saveAIRecommendation(ctx.user.id, analysisData, recommendedProducts);
+        // Non-fatal — if DB is unavailable the analysis results still return to the user
+        saveAIRecommendation(ctx.user.id, analysisData, recommendedProducts).catch(
+          (e) => console.warn("[AI Stylist] Could not save recommendation to DB:", e.message),
+        );
 
         return {
           success: true,
