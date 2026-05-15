@@ -128,7 +128,9 @@ async function callGeminiVision(
             { text: ANALYSIS_PROMPT },
           ],
         }],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.2 },
+        // No maxOutputTokens — Gemini 2.5 uses "thinking tokens" that count
+        // against the cap and cause truncation before the JSON response completes
+        generationConfig: { temperature: 0.2 },
       }),
     },
   );
