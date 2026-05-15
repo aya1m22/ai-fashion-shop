@@ -225,18 +225,40 @@ export const appRouter = router({
           analysisData.detectedGender !== input.gender;
 
         const allProducts = await getProducts(input.gender, 200, 0);
+
+        // Build color token list from Gemini's recommended colors
         const bestColorTokens = analysisData.bestColors.map((c) =>
           (typeof c === "string" ? c : c.name).toLowerCase()
         );
 
-        // Match products whose catalog colors overlap with recommended palette
-        const colorMatched = allProducts.filter((p: any) =>
-          (p.colors as string[])?.some((c) =>
-            bestColorTokens.some((bc) => c.toLowerCase().includes(bc) || bc.includes(c.toLowerCase()))
-          )
-        );
+        // Season → additional color keywords to broaden matching
+        const seasonKeywords: Record<string, string[]> = {
+          Spring:  ["coral", "peach", "ivory", "camel", "warm", "yellow", "light"],
+          Summer:  ["lavender", "rose", "grey", "blue", "pink", "soft", "cool"],
+          Autumn:  ["rust", "olive", "brown", "camel", "terracotta", "warm", "mustard", "burgundy"],
+          Winter:  ["black", "white", "navy", "red", "charcoal", "jewel", "bold"],
+        };
+        const extraTokens = seasonKeywords[analysisData.seasonalPalette] ?? [];
+        const allTokens = [...new Set([...bestColorTokens, ...extraTokens])];
 
-        // Accessory metal matching for men
+        // Score each product: +2 for each Gemini color match, +1 for season keyword match
+        const scored = allProducts.map((p: any) => {
+          const productColors = ((p.colors as string[]) ?? []).map((c: string) => c.toLowerCase());
+          let score = 0;
+          for (const token of bestColorTokens) {
+            if (productColors.some((c) => c.includes(token) || token.includes(c))) score += 2;
+          }
+          for (const token of extraTokens) {
+            if (productColors.some((c) => c.includes(token) || token.includes(c))) score += 1;
+          }
+          return { product: p, score };
+        });
+
+        // Sort by score descending, take products with score > 0 first
+        scored.sort((a, b) => b.score - a.score);
+        const colorMatched = scored.filter((s) => s.score > 0).map((s) => s.product);
+
+        // Accessory metal matching
         const metal = analysisData.accessoryMetal;
         const metalTokens = metal === "either" ? ["gold", "silver"] : [metal];
 
@@ -246,20 +268,18 @@ export const appRouter = router({
           const clothingItems = colorMatched
             .filter((p: any) => p.subcategory !== "accessories")
             .slice(0, 5);
-
           const accessoryItems = allProducts.filter((p: any) => {
             if (p.subcategory !== "accessories") return false;
             return (p.colors as string[])?.some((c) =>
               metalTokens.some((m) => c.toLowerCase().includes(m))
             );
           }).slice(0, 3);
-
           recommendedProducts = [...clothingItems, ...accessoryItems];
         } else {
           recommendedProducts = colorMatched.slice(0, 9);
         }
 
-        // Fallback: if color matching yields nothing, return random items from selected gender
+        // Fallback: if color matching yields nothing, use top-scored or first products
         if (recommendedProducts.length === 0) {
           recommendedProducts = allProducts.slice(0, input.gender === "men" ? 8 : 9);
         }

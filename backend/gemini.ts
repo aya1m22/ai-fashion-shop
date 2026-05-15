@@ -12,27 +12,38 @@ export interface SkinAnalysis {
   tip?: string;
 }
 
-const ANALYSIS_PROMPT = `You are a professional color analyst. Analyze this person's skin tone from the photo.
-Determine their apparent gender from visual cues.
-Return ONLY a valid JSON object — no markdown, no explanation:
+const ANALYSIS_PROMPT = `You are an expert personal color analyst. Study the actual person in this photo carefully.
+
+Analyze:
+- Their real skin tone: choose ONE of [fair, light, medium, olive, tan, deep]
+- Their real undertone: look at veins, jaw, and overall hue — choose ONE of [warm, cool, neutral]
+- Their apparent gender from visual cues: [men, women, unknown]
+- Their personal color season: [Spring, Summer, Autumn, Winter]
+- Exactly 5 clothing colors that genuinely flatter THIS person's specific coloring — provide a descriptive name and accurate hex code for each
+- Whether gold or silver jewelry suits them better: [gold, silver, either]
+- One personalized style tip sentence for THIS specific person
+
+IMPORTANT: Base your analysis entirely on the actual person in the photo. Do NOT use generic or placeholder answers.
+
+Return ONLY a valid JSON object with no markdown, no extra text:
 {
   "isValid": true,
-  "detectedGender": "women",
-  "skinTone": "medium",
-  "undertone": "warm",
-  "season": "Autumn",
+  "detectedGender": "<actual gender>",
+  "skinTone": "<actual skin tone>",
+  "undertone": "<actual undertone>",
+  "season": "<actual season>",
   "bestColors": [
-    {"name": "terracotta", "hex": "#c65d3a"},
-    {"name": "olive green", "hex": "#6b7c3f"},
-    {"name": "warm beige", "hex": "#d4b896"},
-    {"name": "rust", "hex": "#b7410e"},
-    {"name": "camel", "hex": "#c19a6b"}
+    {"name": "<color 1 name>", "hex": "<color 1 hex>"},
+    {"name": "<color 2 name>", "hex": "<color 2 hex>"},
+    {"name": "<color 3 name>", "hex": "<color 3 hex>"},
+    {"name": "<color 4 name>", "hex": "<color 4 hex>"},
+    {"name": "<color 5 name>", "hex": "<color 5 hex>"}
   ],
-  "jewelry": "gold",
-  "tip": "one sentence style tip for this person"
+  "jewelry": "<gold or silver or either>",
+  "tip": "<personalized tip for this specific person>"
 }
 
-If no person with visible skin is detected, return:
+If no person with clearly visible skin is in the photo, return:
 {
   "isValid": false,
   "detectedGender": "unknown",
