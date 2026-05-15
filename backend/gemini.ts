@@ -117,7 +117,7 @@ async function callGeminiVision(
             { text: ANALYSIS_PROMPT },
           ],
         }],
-        generationConfig: { maxOutputTokens: 512, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.2 },
       }),
     },
   );
