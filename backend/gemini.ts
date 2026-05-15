@@ -140,13 +140,15 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
   for (const model of models) {
     let response = await callGeminiVision(apiKey, model, mimeType, base64Data);
 
-    if (response.status === 429) {
-      console.warn(`[Gemini] Rate limit on ${model} — retrying in 3 s`);
+    // 429 rate-limit or 503 overload — wait 3 s and retry once
+    if (response.status === 429 || response.status === 503) {
+      console.warn(`[Gemini] ${response.status} on ${model} — retrying in 3 s`);
       await new Promise((r) => setTimeout(r, 3000));
       response = await callGeminiVision(apiKey, model, mimeType, base64Data);
     }
-    if (response.status === 429) {
-      lastError = "rate_limit";
+    if (response.status === 429 || response.status === 503) {
+      console.warn(`[Gemini] ${model} still unavailable — trying next model`);
+      lastError = response.status === 503 ? "overloaded" : "rate_limit";
       continue;
     }
     if (response.status === 404) {
@@ -157,7 +159,6 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
     }
     if (!response.ok) {
       const t = await response.text();
-      // Non-retryable error — surface it immediately
       throw new Error(`Gemini API error ${response.status}: ${t.slice(0, 300)}`);
     }
 
@@ -184,8 +185,8 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
     }
   }
 
-  if (lastError === "rate_limit") {
-    throw new Error("AI analysis is temporarily busy — please wait a moment and try again.");
+  if (lastError === "rate_limit" || lastError === "overloaded") {
+    throw new Error("AI is temporarily busy due to high demand — please wait a moment and try again.");
   }
   throw new Error("No Gemini model could handle the request. Check your API key at aistudio.google.com/apikey");
 }
@@ -207,14 +208,14 @@ export async function askGeminiText(prompt: string): Promise<string> {
       { method: "POST", headers: { "Content-Type": "application/json" }, body },
     );
 
-    if (response.status === 429) {
+    if (response.status === 429 || response.status === 503) {
       await new Promise((r) => setTimeout(r, 3000));
       response = await fetch(
         `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body },
       );
     }
-    if (response.status === 429 || response.status === 404) continue;
+    if (response.status === 429 || response.status === 503 || response.status === 404) continue;
     if (!response.ok) continue;
 
     const result = await response.json();
