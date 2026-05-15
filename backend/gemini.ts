@@ -128,7 +128,7 @@ async function callGeminiVision(
             { text: ANALYSIS_PROMPT },
           ],
         }],
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.2 },
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.2 },
       }),
     },
   );
@@ -210,7 +210,7 @@ export async function askGeminiText(prompt: string): Promise<string> {
   const models = await discoverModels(apiKey);
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+    generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
   });
 
   for (const model of models) {
