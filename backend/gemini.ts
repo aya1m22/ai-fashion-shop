@@ -6,44 +6,42 @@ export interface SkinAnalysis {
   detectedGender: "men" | "women" | "unknown";
   skinTone: string;
   undertone: "warm" | "cool" | "neutral";
-  bestColors: string[];
+  bestColors: { name: string; hex: string }[];
   accessoryMetal: "gold" | "silver" | "either";
   seasonalPalette: "Spring" | "Summer" | "Autumn" | "Winter";
+  tip?: string;
 }
 
-const ANALYSIS_PROMPT = `You are a professional personal color analyst and fashion stylist.
-
-Analyze this photo and determine:
-1. Whether a person with clearly visible skin is present
-2. Their skin tone (fair / light / medium / olive / tan / deep)
-3. Their undertone (warm / cool / neutral) based on vein color, jaw line, and overall hue
-4. Their apparent gender from visual cues (for clothing recommendations)
-5. The 5 best clothing colors that flatter this skin tone and undertone
-6. Whether gold or silver accessories suit them better
-7. Their personal color season (Spring / Summer / Autumn / Winter)
-
-Return ONLY valid JSON with this exact shape — no markdown, no extra text:
+const ANALYSIS_PROMPT = `You are a professional color analyst. Analyze this person's skin tone from the photo.
+Determine their apparent gender from visual cues.
+Return ONLY a valid JSON object — no markdown, no explanation:
 {
   "isValid": true,
-  "message": "Analysis complete",
   "detectedGender": "women",
   "skinTone": "medium",
   "undertone": "warm",
-  "bestColors": ["terracotta", "olive green", "warm beige", "rust", "camel"],
-  "accessoryMetal": "gold",
-  "seasonalPalette": "Autumn"
+  "season": "Autumn",
+  "bestColors": [
+    {"name": "terracotta", "hex": "#c65d3a"},
+    {"name": "olive green", "hex": "#6b7c3f"},
+    {"name": "warm beige", "hex": "#d4b896"},
+    {"name": "rust", "hex": "#b7410e"},
+    {"name": "camel", "hex": "#c19a6b"}
+  ],
+  "jewelry": "gold",
+  "tip": "one sentence style tip for this person"
 }
 
 If no person with visible skin is detected, return:
 {
   "isValid": false,
-  "message": "Could not detect a person with visible skin in this photo.",
   "detectedGender": "unknown",
   "skinTone": "",
   "undertone": "neutral",
+  "season": "Summer",
   "bestColors": [],
-  "accessoryMetal": "either",
-  "seasonalPalette": "Summer"
+  "jewelry": "either",
+  "tip": ""
 }`;
 
 const VISION_MODELS = [
@@ -133,7 +131,19 @@ export async function analyzePhotoWithGemini(imageDataUrl: string): Promise<Skin
     const text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 
     try {
-      return JSON.parse(text) as SkinAnalysis;
+      const raw = JSON.parse(text) as any;
+      // Normalise Gemini's field names → SkinAnalysis interface
+      return {
+        isValid: raw.isValid ?? true,
+        message: raw.message ?? (raw.isValid === false ? "Photo not suitable" : "Analysis complete"),
+        detectedGender: raw.detectedGender ?? "unknown",
+        skinTone: raw.skinTone ?? "",
+        undertone: raw.undertone ?? "neutral",
+        bestColors: Array.isArray(raw.bestColors) ? raw.bestColors : [],
+        accessoryMetal: raw.jewelry ?? raw.accessoryMetal ?? "either",
+        seasonalPalette: raw.season ?? raw.seasonalPalette ?? "Summer",
+        tip: raw.tip ?? "",
+      } as SkinAnalysis;
     } catch {
       throw new Error(`Gemini response was not valid JSON: ${text.slice(0, 200)}`);
     }

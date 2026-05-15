@@ -225,7 +225,9 @@ export const appRouter = router({
           analysisData.detectedGender !== input.gender;
 
         const allProducts = await getProducts(input.gender, 200, 0);
-        const bestColorTokens = analysisData.bestColors.map((c) => c.toLowerCase());
+        const bestColorTokens = analysisData.bestColors.map((c) =>
+          (typeof c === "string" ? c : c.name).toLowerCase()
+        );
 
         // Match products whose catalog colors overlap with recommended palette
         const colorMatched = allProducts.filter((p: any) =>

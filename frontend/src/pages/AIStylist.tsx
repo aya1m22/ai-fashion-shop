@@ -41,32 +41,20 @@ const OCCASION_TIPS: Record<string, string> = {
   gym: "Focus on performance fabrics that move with you, but don't sacrifice style. Color-coordinated sets are trending.",
 };
 
-// CSS color approximations for the swatch display
-const COLOR_SWATCH: Record<string, string> = {
-  black: "#1a1a1a", white: "#f5f0eb", navy: "#1b2a4a", beige: "#d4b896",
-  camel: "#c19a6b", "warm beige": "#d4b896", cream: "#fffdd0",
-  terracotta: "#c65d3a", rust: "#b7410e", olive: "#6b7c3f",
-  "olive green": "#6b7c3f", burgundy: "#800020", red: "#cc2200",
-  pink: "#e075a0", blush: "#e8b4b8", lavender: "#9370db",
-  purple: "#6a0dad", "royal blue": "#2b4fa8", blue: "#2060c0",
-  teal: "#008080", green: "#228b22", "forest green": "#228b22",
-  grey: "#808080", gray: "#808080", charcoal: "#36454f",
-  brown: "#7b4f2e", gold: "#c9a84c", silver: "#a8a8a8",
-  coral: "#ff6b6b", peach: "#ffd6b3", mustard: "#c9a63c",
-  taupe: "#9b8574", sand: "#c2b280", ivory: "#fffff0",
-};
+type ColorEntry = { name: string; hex: string } | string;
 
-function ColorSwatch({ color }: { color: string }) {
-  const bg = COLOR_SWATCH[color.toLowerCase()] ?? "#555";
+function ColorSwatch({ color }: { color: ColorEntry }) {
+  const name = typeof color === "string" ? color : color.name;
+  const hex = typeof color === "string" ? "#555" : (color.hex || "#555");
   return (
     <div className="flex flex-col items-center gap-1">
       <div
         className="w-10 h-10 rounded-full border-2 border-[#2A2A2A]"
-        style={{ backgroundColor: bg }}
-        title={color}
+        style={{ backgroundColor: hex }}
+        title={`${name} ${hex}`}
       />
       <span className="text-[9px] uppercase tracking-widest text-[#666] text-center leading-tight max-w-[48px]">
-        {color}
+        {name}
       </span>
     </div>
   );
@@ -505,10 +493,18 @@ Return ONLY valid JSON with:
                               Your Colour Palette
                             </p>
                             <div className="flex flex-wrap gap-4">
-                              {analysis.bestColors.map((color: string) => (
-                                <ColorSwatch key={color} color={color} />
+                              {analysis.bestColors.map((color: any) => (
+                                <ColorSwatch key={typeof color === "string" ? color : color.name} color={color} />
                               ))}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Style tip */}
+                        {(analysis as any).tip && (
+                          <div className="border-t border-[#2A2A2A] pt-6 flex gap-3 items-start">
+                            <Info className="w-4 h-4 text-[#C9A84C] shrink-0 mt-0.5" />
+                            <p className="text-sm text-[#A0A0A0] italic">"{(analysis as any).tip}"</p>
                           </div>
                         )}
                       </div>
