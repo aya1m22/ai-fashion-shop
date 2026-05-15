@@ -39,10 +39,14 @@ export function createApp() {
     const key = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY ?? "";
     if (!key) return res.status(400).json({ error: "No Gemini API key in .env" });
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}&pageSize=100`);
       const data = await r.json();
-      const names = (data.models ?? []).map((m: any) => m.name);
-      res.json({ status: r.status, models: names });
+      if (!r.ok) return res.status(r.status).json(data);
+      const models = (data.models ?? []).map((m: any) => ({
+        name: m.name,
+        generateContent: (m.supportedGenerationMethods ?? []).includes("generateContent"),
+      }));
+      res.json({ total: models.length, models });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
