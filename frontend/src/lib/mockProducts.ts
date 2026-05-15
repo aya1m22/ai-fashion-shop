@@ -222,7 +222,7 @@ export const mockProducts: Product[] = [
     occasion: ["daily casual", "going out", "concert", "travel"],
     price: "95.00",
     oldPrice: "120.00",
-    imageUrl: "https://images.unsplash.com/photo-1495064404983-832c3001851e?w=400&h=500&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=800&q=80",
     sizes: ["S", "M", "L", "XL"],
     stock: "in stock",
     isNew: false,

@@ -48,7 +48,7 @@ const Home: React.FC = () => {
           }}
         />
         <div className="absolute inset-0 bg-black/45" />
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay animate-grain bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay animate-grain bg-[url('/ai-fashion-shop/noise.svg')]" />
 
         <div className="relative h-full container mx-auto px-4 flex flex-col items-center justify-center text-center">
           <h1 
