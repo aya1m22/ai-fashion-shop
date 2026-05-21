@@ -4,9 +4,9 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx watch backend/_core/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx backend/_core/index.ts",
     "frontend:dev": "vite frontend --port 3000",
-    "backend:dev": "cross-env NODE_ENV=development tsx watch backend/_core/index.ts",
+    "backend:dev": "cross-env NODE_ENV=development tsx backend/_core/index.ts",
     "start:all": "concurrently \"pnpm run backend:dev\" \"pnpm run frontend:dev\"",
     "build": "vite build frontend; esbuild backend/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build:frontend": "vite build frontend",
