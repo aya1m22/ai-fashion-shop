@@ -31,9 +31,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedCart = localStorage.getItem('styleai_cart');
     if (savedCart) {
       try {
-        setCartItems(JSON.parse(savedCart));
+        const parsed = JSON.parse(savedCart);
+        if (Array.isArray(parsed)) {
+          setCartItems(parsed);
+        } else {
+          console.warn('Ignored invalid saved cart value', parsed);
+          setCartItems([]);
+          localStorage.removeItem('styleai_cart');
+        }
       } catch (e) {
         console.error('Failed to parse cart', e);
+        setCartItems([]);
+        localStorage.removeItem('styleai_cart');
       }
     }
   }, []);
