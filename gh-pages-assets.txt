@@ -1,0 +1,5 @@
+assets/index-CgBzgq5Q.css
+assets/index-sCAAV5Ji.js
+assets/vendor-query-LfOTMZz1.js
+assets/vendor-react-COd4auuD.js
+assets/vendor-ui-CRbUh4W3.js
